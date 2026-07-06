@@ -1,0 +1,27 @@
+# .github/workflows/update-data.yml
+# 毎月5日 朝6時(JST)に厚生局名簿を取得して facilities.json を更新・コミット
+# 注意: 厚生局サイトは海外IPを遮断している模様。GitHubのランナー(米国)からは
+# 失敗する可能性がある。その場合は手元で fetch_kosei.py を実行してコミットする。
+name: update-facilities-data
+on:
+  schedule:
+    - cron: "0 21 4 * *"→ Runs at 21:00, on day 4 of the month   # UTC 21:00 = JST 6:00（毎月5日）
+  workflow_dispatch:        # 手動実行も可
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install openpyxl requests
+      - run: python3 fetch_kosei.py
+      - name: commit if changed
+        run: |
+          git config user.name "data-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add facilities.json geocode_cache.json
+          git diff --cached --quiet || git commit -m "data: 厚生局名簿 $(date +%Y-%m) 更新"
+          git push
