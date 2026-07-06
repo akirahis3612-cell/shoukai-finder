@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>紹介先ファインダー — 葛飾区</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --night:#0c1424; --night2:#101a2e;
+  --paper:#f6f4ee; --panel:#fff; --ink:#1f2733; --sub:#66707c; --line:#e4e2da;
+  --up:#12939e; --up-ink:#0b6b74; --up-soft:#e0f2f3;
+  --down:#d9822b; --down-ink:#a75f1a; --down-soft:#f8ecdd;
+  --focus:#12939e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Zen Kaku Gothic New",system-ui,-apple-system,"Hiragino Sans",sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1160px;margin:0 auto;padding:0 16px 40px}
+
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 2px 8px}
+.brand{font-family:"Shippori Mincho",serif;font-size:21px;font-weight:700;letter-spacing:.04em}
+.brand small{font-family:"Zen Kaku Gothic New";font-size:10.5px;font-weight:500;
+  color:var(--sub);display:block;letter-spacing:.14em;margin-top:1px}
+.crumb{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--sub);
+  background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.crumb b{color:var(--ink)}
+.crumb .sep{color:#c6c3b8}
+.datachip{margin-left:auto;font-size:11px;color:var(--sub);
+  background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+.datachip.live{color:var(--up-ink);border-color:var(--up);font-weight:700}
+.note{font-size:11px;color:#9a948a;margin:0 2px 10px;line-height:1.6}
+
+/* ---- STEP1: 上り/下り ---- */
+.dirbar{display:flex;gap:8px;margin:0 0 10px}
+.dirbtn{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:14px;
+  padding:12px 10px;cursor:pointer;text-align:center;transition:.15s;line-height:1.35}
+.dirbtn b{display:block;font-size:14.5px}
+.dirbtn small{font-size:10.5px;color:var(--sub)}
+.dirbtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.dirbtn.on-up{background:var(--up-soft);border-color:var(--up);color:var(--up-ink)}
+.dirbtn.on-down{background:var(--down-soft);border-color:var(--down);color:var(--down-ink)}
+.dirbtn.on-all{background:var(--ink);border-color:var(--ink);color:#fff}
+.dirbtn.on-all small,.dirbtn.on-up small,.dirbtn.on-down small{color:inherit;opacity:.75}
+
+/* ---- STEP2: 起点 ---- */
+.originbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px;margin:0 0 14px}
+.originbar .lab{font-size:11px;color:var(--sub);letter-spacing:.06em;padding:0 4px 0 6px}
+.obtn{border:1px solid var(--line);background:#fbfaf6;border-radius:10px;
+  padding:9px 12px;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.obtn:hover{border-color:#c9c6bb}
+.obtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.obtn.mic.rec{background:#fde8e6;border-color:#d95b4a;color:#a83326;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.6}}
+.originbar input{flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;
+  padding:9px 12px;font-size:13px;font-family:inherit}
+.originbar input:focus{outline:2px solid var(--focus);outline-offset:-1px}
+.ochip{font-size:12px;background:var(--ink);color:#fff;border-radius:999px;
+  padding:7px 13px;white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- map ---- */
+.mapwrap{position:relative;border-radius:18px;overflow:hidden;background:var(--night);
+  box-shadow:0 14px 40px rgba(12,20,36,.28);margin-bottom:16px}
+#stage{display:block;width:100%;height:52vh;min-height:360px;max-height:560px;
+  touch-action:none;cursor:grab}
+#stage.grabbing{cursor:grabbing}
+.map-title{position:absolute;top:16px;left:18px;color:#e9eef5;pointer-events:none}
+.map-title .mt1{font-family:"Shippori Mincho",serif;font-size:16px;letter-spacing:.12em}
+.map-title .mt2{font-size:10.5px;color:#8fa0b5;margin-top:2px}
+.map-legend{position:absolute;bottom:14px;left:18px;display:flex;gap:14px;
+  font-size:11px;color:#aebccd;pointer-events:none}
+.map-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.dot.u{background:#35c9d4}.dot.d{background:#f0a04e}
+.map-hint{position:absolute;bottom:14px;right:16px;font-size:10.5px;color:#6f7f93;pointer-events:none}
+.webgl-fail{padding:36px;text-align:center;color:#aebccd;font-size:13px;display:none}
+.presets{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;max-width:220px}
+.preset{border:1px solid rgba(255,255,255,.16);background:rgba(16,26,46,.78);
+  backdrop-filter:blur(6px);color:#dfe7f0;border-radius:10px;padding:8px 12px;
+  font-size:12px;text-align:left;cursor:pointer;transition:.15s;line-height:1.3}
+.preset:hover{border-color:rgba(255,255,255,.4)}
+.preset:focus-visible{outline:2px solid #35c9d4;outline-offset:2px}
+.preset.on{background:#eaf7f8;color:var(--up-ink);border-color:#35c9d4;font-weight:700}
+.preset small{display:block;font-size:10px;color:#8fa0b5;font-weight:400}
+.preset.on small{color:var(--up-ink)}
+.preset.hide{display:none}
+@media(max-width:700px){
+  .presets{position:static;flex-direction:row;overflow-x:auto;max-width:none;
+    padding:10px 12px;background:var(--night2);gap:8px}
+  .preset{white-space:nowrap;flex:0 0 auto}
+}
+
+/* ---- toolbar / chips ---- */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:none;padding:8px 14px;font-size:12.5px;cursor:pointer;color:var(--sub)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.tchip{border:1px solid var(--line);background:#fff;border-radius:999px;
+  padding:8px 13px;font-size:12.5px;cursor:pointer}
+.tchip[aria-pressed="true"]{background:var(--down-soft);border-color:var(--down);color:var(--down-ink);font-weight:700}
+.count{margin-left:auto;font-size:12.5px;color:var(--sub)}
+.caps-row{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;align-items:center}
+.caps-row .cat{font-size:10.5px;color:#9a948a;margin-right:2px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;
+  padding:6px 12px;font-size:12px;cursor:pointer;transition:.12s}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.hide{display:none}
+.modebtn{border:1px dashed var(--line);background:none;border-radius:999px;
+  padding:6px 12px;font-size:11.5px;color:var(--sub);cursor:pointer}
+
+/* ---- cards ---- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:16px;display:flex;flex-direction:column;gap:9px;transition:.15s}
+.card.sel{border-color:var(--up);box-shadow:0 6px 22px rgba(18,147,158,.16)}
+.card .top{display:flex;align-items:flex-start;gap:10px}
+.card .name{font-size:15.5px;font-weight:700;line-height:1.35;margin:0;flex:1}
+.card .name button{all:unset;cursor:pointer}
+.card .name button:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.badge{font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px;white-space:nowrap}
+.badge.u{background:var(--up-soft);color:var(--up-ink)}
+.badge.d{background:var(--down-soft);color:var(--down-ink)}
+.access{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:12px;color:var(--sub)}
+.access .km{font-weight:700;color:var(--ink)}
+.access .bf{color:var(--up-ink);font-weight:700}
+.caplist{display:flex;flex-wrap:wrap;gap:5px}
+.cap{font-size:11px;background:#f2f1ea;color:#565f56;border-radius:6px;padding:3px 8px}
+.cap.hit{background:#dcf0ec;color:var(--up-ink);font-weight:700}
+.card .acts{display:flex;gap:8px;margin-top:2px}
+.hand{flex:1;border:0;background:var(--ink);color:#fff;border-radius:10px;
+  padding:10px;font-size:13px;font-weight:600;cursor:pointer}
+.hand:hover{background:#000}
+.iconbtn{border:1px solid var(--line);background:#fff;border-radius:10px;
+  padding:10px 12px;font-size:12.5px;cursor:pointer;color:var(--sub);text-decoration:none;
+  display:inline-flex;align-items:center}
+.iconbtn:hover{color:var(--ink);border-color:#c9c6bb}
+.empty{grid-column:1/-1;background:#fff;border:1px dashed var(--line);border-radius:16px;
+  padding:34px;text-align:center;color:var(--sub);font-size:13px;line-height:1.8}
+
+/* ---- modal / toast / print（v2と同じ） ---- */
+.scrim{position:fixed;inset:0;background:rgba(12,20,36,.5);display:none;
+  align-items:center;justify-content:center;padding:16px;z-index:40}
+.scrim.on{display:flex}
+.sheet{background:#fff;border-radius:18px;max-width:430px;width:100%;padding:22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.3);max-height:92vh;overflow:auto}
+.sheet .close{float:right;border:0;background:none;font-size:22px;color:var(--sub);cursor:pointer;line-height:1}
+.sheet h3{font-family:"Shippori Mincho",serif;margin:0 0 3px;font-size:18px}
+.sheet .kind{font-size:12px;color:var(--sub);margin:0 0 14px}
+.hrow{font-size:13px;margin:0 0 8px;line-height:1.55;display:flex;gap:10px}
+.hrow b{color:var(--sub);font-weight:500;flex:0 0 70px}
+.qrbox{display:flex;gap:16px;align-items:center;margin:14px 0 6px;
+  background:#f8f7f2;border-radius:12px;padding:14px}
+#qr{width:120px;height:120px;flex:0 0 120px;background:#fff;padding:6px;border-radius:8px}
+.qrbox p{font-size:12px;color:var(--sub);margin:0;line-height:1.7}
+.sheet .acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.sheet .acts>*{flex:1;text-align:center;border-radius:11px;padding:12px 6px;
+  font-size:12.5px;cursor:pointer;text-decoration:none;border:0;font-weight:600;min-width:90px}
+a.gmap{background:var(--up);color:#fff}
+a.site{background:#eef0ec;color:var(--ink)}
+button.copy{background:#eef0ec;color:var(--ink)}
+button.print{background:#fff;border:1px solid var(--line)!important;color:var(--ink)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:11px;
+  font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:60;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+.memo{display:none}
+@media print{
+  body *{visibility:hidden}
+  .memo,.memo *{visibility:visible}
+  .memo{display:block;position:absolute;left:0;top:0;width:100%;padding:14mm;color:#000}
+  .memo h2{font-family:"Shippori Mincho",serif;font-size:20pt;margin:0 0 2mm}
+  .memo .mk{font-size:10pt;color:#444;margin:0 0 8mm}
+  .memo p{font-size:13pt;margin:0 0 4mm}
+  .memo p b{display:inline-block;width:26mm;color:#555;font-weight:500}
+  .memo .foot{margin-top:10mm;font-size:9.5pt;color:#666;border-top:1px solid #999;padding-top:3mm}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">紹介先ファインダー<small>REFERRAL FINDER — UROLOGY</small></div>
+    <nav class="crumb"><span>全国</span><span class="sep">›</span><span>東京都</span><span class="sep">›</span><b>葛飾区</b></nav>
+    <span class="datachip" id="dataChip">内蔵データ</span>
+  </header>
+  <p class="note">⚠ プロトタイプ：病院は実在（対応処置は<b>サンプル・要確認</b>）、クリニックは架空。位置は概算です。チャット内プレビューでは現在地・音声・住所検索がブロックされる場合があります（サーバ設置 or ローカルで全機能動作）。</p>
+
+  <!-- STEP1 上り/下り -->
+  <div class="dirbar" role="group" aria-label="紹介の方向">
+    <button class="dirbtn" id="dirUp"><b>⛰ 上り</b><small>高度手術・専門治療へ紹介</small></button>
+    <button class="dirbtn" id="dirDown"><b>🏘 下り</b><small>かかりつけ・逆紹介先を探す</small></button>
+    <button class="dirbtn on-all" id="dirAll"><b>すべて</b><small>両方から探す</small></button>
+  </div>
+
+  <!-- STEP2 起点 -->
+  <div class="originbar">
+    <span class="lab">起点</span>
+    <span class="ochip" id="originChip">自院（青砥駅周辺）</span>
+    <button class="obtn" id="btnHome">🏥 自院</button>
+    <button class="obtn" id="btnGeo">📍 現在地</button>
+    <input id="addrInput" type="text" placeholder="患者さんの住所・駅名・町名（例：亀有3丁目）"
+      aria-label="起点にする住所">
+    <button class="obtn mic" id="btnMic" title="音声で住所入力">🎤</button>
+    <button class="obtn" id="btnSearch">検索</button>
+  </div>
+
+  <div class="mapwrap">
+    <canvas id="stage" aria-label="葛飾区の3Dマップ"></canvas>
+    <div class="webgl-fail" id="fail">3D表示ができない環境です。下のリストからご利用ください。</div>
+    <div class="map-title">
+      <div class="mt1">葛 飾 区</div>
+      <div class="mt2" id="mapSub">起点：自院 ／ 輪は 1・2・3 km</div>
+    </div>
+    <div class="map-legend">
+      <span><span class="dot u"></span>上り</span>
+      <span><span class="dot d"></span>下り</span>
+      <span style="color:#7d8ea4">▲ ランドマーク</span>
+    </div>
+    <div class="map-hint">ドラッグ回転 ／ ピンチ・ホイール拡縮 ／ ピンをタップ</div>
+    <div class="presets" id="presets" role="group" aria-label="外来シナリオ"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="並び順">
+      <button id="sortDist" aria-pressed="true">近い順</button>
+      <button id="sortWalk" aria-pressed="false">駅徒歩順</button>
+    </div>
+    <button class="tchip" id="fWalk" aria-pressed="false">駅徒歩7分以内</button>
+    <button class="tchip" id="fBf" aria-pressed="false">♿ バリアフリー</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="caps-row" id="capsRow"></div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<!-- handoff -->
+<div class="scrim" id="scrim">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shName">
+    <button class="close" id="shClose" aria-label="閉じる">×</button>
+    <h3 id="shName"></h3>
+    <p class="kind" id="shKind"></p>
+    <p class="hrow"><b>住所</b><span id="shAddr"></span></p>
+    <p class="hrow"><b>電話</b><span id="shTel"></span></p>
+    <p class="hrow"><b>アクセス</b><span id="shAcc"></span></p>
+    <p class="hrow"><b>できること</b><span id="shCaps"></span></p>
+    <div class="qrbox">
+      <div id="qr"></div>
+      <p>患者さんのスマホでQRを読むと地図アプリが開きます。ご高齢の方には「印刷」で紙メモを。</p>
+    </div>
+    <div class="acts">
+      <a class="gmap" id="shMap" target="_blank" rel="noopener">地図で開く</a>
+      <a class="site" id="shSite" target="_blank" rel="noopener">🌐 サイト</a>
+      <button class="copy" id="shCopy">コピー</button>
+      <button class="print" id="shPrint">印刷</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="memo" id="memo">
+  <h2 id="mName"></h2>
+  <p class="mk" id="mKind"></p>
+  <p><b>住所</b><span id="mAddr"></span></p>
+  <p><b>電話</b><span id="mTel"></span></p>
+  <p><b>行き方</b><span id="mAcc"></span></p>
+  <p class="foot">この紹介メモは参考情報です。受診の際は事前に医療機関へお問い合わせください。</p>
+</div>
+
+<script>
+/* =====================================================
+   設定
+   DATA_URL: 施設データJSONのURL。同じサーバに facilities.json を
+   置けばアプリ本体を触らずデータ更新できる（空なら内蔵データ）。
+   JSONの形式は下の FACILITIES と同じ配列。
+===================================================== */
+const DATA_URL = "https://raw.githubusercontent.com/akirahis3612-cell/shoukai-finder/main/facilities.json";           // 例: "facilities.json"
+const HOME = {lat:35.7448, lng:139.8547, label:"自院（青砥駅周辺）"}; // 自院の座標に差し替え
+
+/* --- 座標系：青砥駅を原点にした km 換算 --- */
+const KM_LAT = 111.0, KM_LNG = 90.4; // 北緯35.7°付近
+const toKm = (lat,lng)=>({x:(lng-HOME.lng)*KM_LNG, y:(lat-HOME.lat)*KM_LAT});
+
+/* --- ケイパビリティ／プリセット --- */
+const CAPS = [
+  {cat:"継続",  items:[["keizoku","良性疾患の継続薬"]]},
+  {cat:"注射",  items:[["lhrh","LH-RH注射"],["bcg","膀胱内BCG"]]},
+  {cat:"検査",  items:[["bscope","膀胱鏡"],["female","女性泌尿器外来"]]},
+  {cat:"外来手術",items:[["botox","膀胱内ボトックス"],["rezum","Rezūm"]]},
+  {cat:"高度手術",items:[["holep","HoLEP"],["tul","TUL（結石）"],["tot","TOT/TVT"],["robot","ロボット手術"]]},
+];
+const CAPNAME = Object.fromEntries(CAPS.flatMap(c=>c.items));
+const UPCAPS = new Set(["holep","tul","tot","robot"]);
+
+const PRESETS = [
+  {id:"p1", dir:"down", name:"排尿障害の薬フォロー", sub:"継続処方できる近所へ", caps:["keizoku"], mode:"AND"},
+  {id:"p2", dir:"down", name:"前立腺癌 ホルモン療法", sub:"LH-RH打てるところ", caps:["lhrh"], mode:"AND"},
+  {id:"p3", dir:"down", name:"膀胱癌フォロー", sub:"膀胱鏡のあるクリニック", caps:["bscope"], mode:"AND"},
+  {id:"p4", dir:"up",   name:"BPH手術 紹介", sub:"HoLEP / Rezūm", caps:["holep","rezum"], mode:"OR"},
+  {id:"p5", dir:"up",   name:"尿路結石（TUL）", sub:"砕石できる病院", caps:["tul"], mode:"AND"},
+  {id:"p6", dir:"all",  name:"尿失禁・女性泌尿器", sub:"TOT / 女性外来", caps:["tot","female"], mode:"OR"},
+];
+
+/* --- 施設（lat/lng は概算。url未設定は検索リンクに） --- */
+let FACILITIES = [
+  {id:"jikei", name:"東京慈恵会医科大学 葛飾医療センター", dir:"up", real:true,
+   lat:35.7520, lng:139.8580, addr:"葛飾区青戸6-41-2", tel:"03-3603-2111",
+   url:"https://www.jikei.ac.jp/hospital/katsushika/",
+   station:"青砥", walk:10, bus:"青砥駅・亀有駅からバス", bf:true,
+   hours:"紹介予約制", caps:["robot","holep","tul","tot","bscope"]},
+  {id:"tobu", name:"東京都立東部地域病院", dir:"up", real:true,
+   lat:35.7690, lng:139.8550, addr:"葛飾区亀有5丁目", tel:"03-5682-5111",
+   station:"亀有", walk:10, bus:"亀有駅からバス便あり", bf:true,
+   hours:"紹介予約制", caps:["tul","bscope","lhrh"]},
+  {id:"tateishi", name:"平成立石病院", dir:"up", real:true,
+   lat:35.7400, lng:139.8450, addr:"葛飾区立石5丁目", tel:"03-3692-1331",
+   station:"京成立石", walk:5, bus:"", bf:true,
+   hours:"外来受付あり", caps:["tul","bscope"]},
+  {id:"bokuto", name:"都立墨東病院（区外・墨田区）", dir:"up", real:true,
+   lat:35.6960, lng:139.8160, addr:"墨田区江東橋4丁目", tel:"03-3633-6151",
+   station:"錦糸町", walk:6, bus:"", bf:true,
+   hours:"紹介予約制", caps:["robot","tul","tot"]},
+
+  {id:"c1", name:"亀有えきまえ泌尿器科（架空）", dir:"down", real:false,
+   lat:35.7660, lng:139.8500, addr:"葛飾区亀有3-X-X", tel:"03-XXXX-0001",
+   station:"亀有", walk:2, bus:"", bf:true,
+   hours:"平日 9–18 ／ 土午前", caps:["keizoku","lhrh","bscope"]},
+  {id:"c2", name:"金町なかがわクリニック（架空）", dir:"down", real:false,
+   lat:35.7690, lng:139.8720, addr:"葛飾区金町6-X-X", tel:"03-XXXX-0002",
+   station:"金町", walk:4, bus:"", bf:false,
+   hours:"平日 9–12:30 / 15–18:30", caps:["keizoku","lhrh","bcg"]},
+  {id:"c3", name:"高砂ひので泌尿器科（架空）", dir:"down", real:false,
+   lat:35.7510, lng:139.8680, addr:"葛飾区高砂5-X-X", tel:"03-XXXX-0003",
+   station:"京成高砂", walk:3, bus:"", bf:true,
+   hours:"月火木金 9–18", caps:["bscope","botox","rezum"]},
+  {id:"c4", name:"立石しばまた通り内科（架空）", dir:"down", real:false,
+   lat:35.7390, lng:139.8460, addr:"葛飾区立石7-X-X", tel:"03-XXXX-0004",
+   station:"京成立石", walk:5, bus:"", bf:false,
+   hours:"平日 9–17:30", caps:["keizoku"]},
+  {id:"c5", name:"お花茶屋レディースウロクリニック（架空）", dir:"down", real:false,
+   lat:35.7495, lng:139.8390, addr:"葛飾区お花茶屋1-X-X", tel:"03-XXXX-0005",
+   station:"お花茶屋", walk:1, bus:"", bf:true,
+   hours:"平日 9–18（水曜 女性枠）", caps:["female","bscope","botox"]},
+  {id:"c6", name:"新小岩みずべ内科（架空）", dir:"down", real:false,
+   lat:35.7180, lng:139.8560, addr:"葛飾区新小岩2-X-X", tel:"03-XXXX-0006",
+   station:"新小岩", walk:6, bus:"", bf:true,
+   hours:"平日 9–18 ／ 土午前", caps:["keizoku"]},
+];
+
+/* --- 駅・町名の内蔵ミニ辞書（オフライン起点検索用・概算座標） --- */
+const GAZETTEER = [
+  ["青砥",35.7448,139.8547],["青戸",35.7500,139.8560],["高砂",35.7506,139.8666],
+  ["京成高砂",35.7506,139.8666],["亀有",35.7666,139.8489],["金町",35.7695,139.8707],
+  ["柴又",35.7594,139.8757],["立石",35.7386,139.8443],["京成立石",35.7386,139.8443],
+  ["新小岩",35.7167,139.8571],["お花茶屋",35.7492,139.8388],["堀切菖蒲園",35.7440,139.8290],
+  ["堀切",35.7440,139.8290],["四つ木",35.7320,139.8370],["水元",35.7860,139.8720],
+  ["東金町",35.7740,139.8780],["西亀有",35.7620,139.8420],["奥戸",35.7280,139.8620],
+  ["細田",35.7400,139.8720],["鎌倉",35.7440,139.8790],["綾瀬",35.7620,139.8250],
+  ["錦糸町",35.6967,139.8140],["押上",35.7106,139.8130],["スカイツリー",35.7101,139.8107],
+];
+
+/* --- ランドマーク（3Dモデル付き） --- */
+const LANDMARKS = [
+  {name:"スカイツリー", lat:35.7101, lng:139.8107, type:"tower"},
+  {name:"柴又帝釈天",   lat:35.7626, lng:139.8783, type:"temple"},
+  {name:"水元公園",     lat:35.7860, lng:139.8720, type:"park", r:0.55},
+  {name:"堀切菖蒲園",   lat:35.7417, lng:139.8288, type:"park", r:0.25},
+];
+
+/* ================= 状態 ================= */
+let origin = {...HOME};
+let dirMode = "all";           // all | up | down
+let active = new Set(), mode = "AND";
+let sortBy = "dist", onlyWalk7=false, onlyBf=false;
+let selectedId=null, activePreset=null;
+
+const distKm = f=>{
+  const a=toKm(f.lat,f.lng), o=toKm(origin.lat,origin.lng);
+  return Math.hypot(a.x-o.x, a.y-o.y);
+};
+function matchCaps(f){
+  if(active.size===0) return true;
+  const a=[...active];
+  return mode==="AND" ? a.every(c=>f.caps.includes(c)) : a.some(c=>f.caps.includes(c));
+}
+function visible(){
+  const wk=f=>f.walk==null?999:f.walk;
+  const arr=FACILITIES.filter(f=>
+    (dirMode==="all"||f.dir===dirMode) && matchCaps(f) &&
+    (!onlyWalk7||wk(f)<=7) && (!onlyBf||f.bf));
+  arr.sort((a,b)=> sortBy==="dist" ? distKm(a)-distKm(b) : wk(a)-wk(b) || distKm(a)-distKm(b));
+  return arr;
+}
+
+/* ================= STEP1 上り/下り ================= */
+function setDir(d){
+  dirMode=d;
+  dirUp.className="dirbtn"+(d==="up"?" on-up":"");
+  dirDown.className="dirbtn"+(d==="down"?" on-down":"");
+  dirAll.className="dirbtn"+(d==="all"?" on-all":"");
+  // 関係ないプリセット・チップを畳む
+  document.querySelectorAll(".preset").forEach(p=>{
+    const pd=p.dataset.dir;
+    p.classList.toggle("hide", d!=="all" && pd!=="all" && pd!==d);
+  });
+  document.querySelectorAll(".chip").forEach(c=>{
+    const isUp=UPCAPS.has(c.dataset.cap);
+    c.classList.toggle("hide", (d==="up"&&!isUp)||(d==="down"&&isUp));
+  });
+  render();
+}
+dirUp.onclick=()=>setDir(dirMode==="up"?"all":"up");
+dirDown.onclick=()=>setDir(dirMode==="down"?"all":"down");
+dirAll.onclick=()=>setDir("all");
+
+/* ================= STEP2 起点 ================= */
+function setOrigin(o, silent){
+  origin=o;
+  originChip.textContent=o.label;
+  mapSub.textContent=`起点：${o.label} ／ 輪は 1・2・3 km`;
+  moveOriginMarker();
+  if(!silent){
+    const k=toKm(o.lat,o.lng);
+    if(Math.hypot(k.x,k.y)>7) toast("マップ表示範囲の外ですが、距離計算は有効です");
+  }
+  render();
+}
+btnHome.onclick=()=>setOrigin({...HOME},true);
+btnGeo.onclick=()=>{
+  if(!navigator.geolocation){toast("この環境では現在地を取得できません");return;}
+  toast("現在地を取得中…");
+  navigator.geolocation.getCurrentPosition(
+    p=>setOrigin({lat:p.coords.latitude,lng:p.coords.longitude,label:"現在地"}),
+    e=>toast("現在地を取得できませんでした（権限を確認）"),
+    {enableHighAccuracy:true,timeout:8000});
+};
+function offlineLookup(q){
+  q=q.replace(/\s|　/g,"");
+  const hit=GAZETTEER.find(g=>q.includes(g[0]));
+  return hit?{lat:hit[1],lng:hit[2],label:hit[0]+"周辺"}:null;
+}
+async function geocode(q){
+  const off=offlineLookup(q);
+  try{
+    const r=await fetch("https://msearch.gsi.go.jp/address-search/AddressSearch?q="+encodeURIComponent(q));
+    const j=await r.json();
+    if(j&&j[0]){
+      const [lng,lat]=j[0].geometry.coordinates;
+      return {lat,lng,label:j[0].properties.title};
+    }
+  }catch(e){/* オフライン辞書へ */}
+  return off;
+}
+async function doSearch(){
+  const q=addrInput.value.trim();
+  if(!q){toast("住所・駅名・町名を入力してください");return;}
+  toast("検索中…");
+  const o=await geocode(q);
+  if(o) setOrigin(o);
+  else toast("見つかりませんでした（例：亀有3丁目、金町）");
+}
+btnSearch.onclick=doSearch;
+addrInput.addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
+
+/* 音声入力 */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){ btnMic.style.display="none"; }
+else{
+  let rec=null;
+  btnMic.onclick=()=>{
+    if(rec){rec.stop();return;}
+    rec=new SR(); rec.lang="ja-JP"; rec.interimResults=false;
+    btnMic.classList.add("rec"); btnMic.textContent="⏺";
+    rec.onresult=e=>{
+      addrInput.value=e.results[0][0].transcript;
+      doSearch();
+    };
+    rec.onerror=()=>toast("音声を認識できませんでした");
+    rec.onend=()=>{btnMic.classList.remove("rec");btnMic.textContent="🎤";rec=null;};
+    try{rec.start();toast("どうぞ（例：かめあり さんちょうめ）");}
+    catch(e){toast("この環境では音声入力できません");rec=null;}
+  };
+}
+
+/* ================= プリセット・チップ ================= */
+PRESETS.forEach(p=>{
+  const b=document.createElement("button");
+  b.className="preset"; b.id="preset-"+p.id; b.dataset.dir=p.dir;
+  b.innerHTML=`${p.name}<small>${p.sub}</small>`;
+  b.onclick=()=>{
+    if(activePreset===p.id){activePreset=null;active.clear();mode="AND";}
+    else{
+      activePreset=p.id; active=new Set(p.caps); mode=p.mode;
+      if(p.dir!=="all") setDir(p.dir);
+    }
+    syncChips(); render();
+  };
+  presets.appendChild(b);
+});
+CAPS.forEach(c=>{
+  const lab=document.createElement("span");lab.className="cat";lab.textContent=c.cat;
+  capsRow.appendChild(lab);
+  c.items.forEach(([id,name])=>{
+    const b=document.createElement("button");
+    b.className="chip";b.dataset.cap=id;b.textContent=name;
+    b.setAttribute("aria-pressed","false");
+    b.onclick=()=>{activePreset=null;
+      active.has(id)?active.delete(id):active.add(id);
+      syncChips();render();};
+    capsRow.appendChild(b);
+  });
+});
+const modeBtn=document.createElement("button");
+modeBtn.className="modebtn";
+modeBtn.onclick=()=>{mode=mode==="AND"?"OR":"AND";syncChips();render();};
+capsRow.appendChild(modeBtn);
+function syncChips(){
+  document.querySelectorAll(".chip").forEach(c=>
+    c.setAttribute("aria-pressed",active.has(c.dataset.cap)?"true":"false"));
+  document.querySelectorAll(".preset").forEach(p=>
+    p.classList.toggle("on","preset-"+(activePreset||"")===p.id));
+  modeBtn.textContent=mode==="AND"?"条件：すべて満たす":"条件：どれか満たす";
+}
+sortDist.onclick=()=>{sortBy="dist";segSync();render();};
+sortWalk.onclick=()=>{sortBy="walk";segSync();render();};
+function segSync(){
+  sortDist.setAttribute("aria-pressed",sortBy==="dist");
+  sortWalk.setAttribute("aria-pressed",sortBy==="walk");
+}
+fWalk.onclick=e=>{onlyWalk7=!onlyWalk7;e.currentTarget.setAttribute("aria-pressed",onlyWalk7);render();};
+fBf.onclick=e=>{onlyBf=!onlyBf;e.currentTarget.setAttribute("aria-pressed",onlyBf);render();};
+
+/* ================= カード ================= */
+function siteUrl(f){
+  return f.url || "https://www.google.com/search?q="+
+    encodeURIComponent(f.name.replace(/（架空）|（区外・墨田区）/g,"")+" 公式サイト");
+}
+function render(){
+  const items=visible();
+  const filtering=active.size>0||onlyWalk7||onlyBf||dirMode!=="all";
+  count.textContent=filtering?`条件に合う ${items.length} 施設`:`全 ${items.length} 施設`;
+  if(items.length===0){
+    cards.innerHTML=`<div class="empty">この条件に合う施設がまだ登録されていません。<br>条件を減らすか、施設データを追加してください。</div>`;
+  }else{
+    cards.innerHTML=items.map(f=>{
+      const dl=f.dir==="up"?["u","上り"]:["d","下り"];
+      const capsHtml=f.caps.map(c=>`<span class="cap${active.has(c)?' hit':''}">${CAPNAME[c]}</span>`).join("");
+      return `<article class="card${selectedId===f.id?' sel':''}" id="card-${f.id}">
+        <div class="top">
+          <h3 class="name"><button onclick="selectFacility('${f.id}',false)">${f.name}</button></h3>
+          <span class="badge ${dl[0]}">${dl[1]}</span>
+        </div>
+        <div class="access">
+          <span class="km">${distKm(f).toFixed(1)} km</span>
+          ${f.station?`<span>${f.station}駅 徒歩${f.walk}分</span>`:`<span>最寄駅 要確認</span>`}
+          ${f.bus?`<span>🚌 ${f.bus}</span>`:""}
+          ${f.bf?`<span class="bf">♿</span>`:""}
+          <span>${f.hours}</span>
+        </div>
+        <div class="caplist">${capsHtml}</div>
+        <div class="acts">
+          <button class="hand" onclick="openSheet('${f.id}')">患者に渡す</button>
+          <button class="iconbtn" onclick="selectFacility('${f.id}',true)">🗺</button>
+          <a class="iconbtn" href="${siteUrl(f)}" target="_blank" rel="noopener" title="公式サイト">🌐</a>
+        </div>
+      </article>`;
+    }).join("");
+  }
+  updateMap(new Set(items.map(f=>f.id)));
+}
+function selectFacility(id,fly){
+  selectedId=id;
+  document.querySelectorAll(".card").forEach(c=>c.classList.toggle("sel",c.id==="card-"+id));
+  if(fly) stage.scrollIntoView({behavior:"smooth",block:"nearest"});
+  else{const el=document.getElementById("card-"+id);el&&el.scrollIntoView({behavior:"smooth",block:"nearest"});}
+  setSelectedPin(id);
+}
+
+/* ================= 患者に渡す ================= */
+function openSheet(id){
+  const f=FACILITIES.find(x=>x.id===id);if(!f)return;
+  selectFacility(id,false);
+  const kind=(f.dir==="up"?"高度治療の紹介先":"かかりつけ・逆紹介先")+`　起点から約 ${distKm(f).toFixed(1)} km`;
+  const acc=(f.station?`${f.station}駅 徒歩${f.walk}分`:"最寄駅 要確認")+(f.bus?`／${f.bus}`:"")+(f.bf?"／バリアフリー対応":"");
+  shName.textContent=f.name;shKind.textContent=kind;
+  shAddr.textContent=f.addr;shTel.textContent=f.tel;shAcc.textContent=acc;
+  shCaps.textContent=f.caps.map(c=>CAPNAME[c]).join("、");
+  const url="https://www.google.com/maps/search/?api=1&query="+
+    encodeURIComponent(f.name.replace(/（架空）|（区外・墨田区）/g,"")+" "+f.addr);
+  shMap.href=url; shSite.href=siteUrl(f);
+  qr.innerHTML="";
+  try{new QRCode(qr,{text:url,width:108,height:108,correctLevel:QRCode.CorrectLevel.M});}
+  catch(e){qr.textContent="QR不可";}
+  const text=`【紹介先】${f.name}\n住所：${f.addr}\n電話：${f.tel}\nアクセス：${acc}`;
+  shCopy.onclick=()=>navigator.clipboard?.writeText(text)
+    .then(()=>toast("コピーしました"),()=>toast("コピーできませんでした"));
+  shPrint.onclick=()=>{
+    mName.textContent=f.name;mKind.textContent=kind;
+    mAddr.textContent=f.addr;mTel.textContent=f.tel;mAcc.textContent=acc;
+    window.print();
+  };
+  scrim.classList.add("on");
+}
+shClose.onclick=()=>scrim.classList.remove("on");
+scrim.onclick=e=>{if(e.target===scrim)scrim.classList.remove("on");};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")scrim.classList.remove("on");});
+let tT;
+function toast(m){const t=document.getElementById("toast");t.textContent=m;
+  t.classList.add("on");clearTimeout(tT);tT=setTimeout(()=>t.classList.remove("on"),2000);}
+
+/* ================= Three.js ================= */
+const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let scene,camera,renderer,pins={},selRing=null,raycaster,pointer;
+let originGroup=null,ringsGroup=null;
+let az=0.55,pol=1.02,radius=8.2;
+let target=new THREE.Vector3(0.2,0,-0.2),targetGoal=target.clone();
+let interacted=false,clock=new THREE.Clock();
+const pos3=(lat,lng)=>{const k=toKm(lat,lng);return new THREE.Vector3(k.x,0,-k.y);};
+
+function labelSprite(txt,color,size){
+  const c=document.createElement("canvas");c.width=256;c.height=64;
+  const g=c.getContext("2d");
+  g.font="700 26px 'Zen Kaku Gothic New',sans-serif";
+  g.shadowColor="rgba(5,10,20,.9)";g.shadowBlur=8;
+  g.fillStyle=color;g.textAlign="center";g.textBaseline="middle";
+  g.fillText(txt.length>9?txt.slice(0,9)+"…":txt,128,32);
+  const tx=new THREE.CanvasTexture(c);tx.minFilter=THREE.LinearFilter;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthWrite:false}));
+  sp.scale.set(size,size*0.25,1);return sp;
+}
+function ribbon(pts,width,color,opacity,glow){
+  const v=pts.map(p=>pos3(p[0],p[1]));
+  const curve=new THREE.CatmullRomCurve3(v);
+  const m=new THREE.Mesh(new THREE.TubeGeometry(curve,64,width,8,false),
+    new THREE.MeshBasicMaterial({color,transparent:true,opacity}));
+  m.scale.y=0.06;m.position.y=0.015;
+  if(glow){
+    const g2=new THREE.Mesh(new THREE.TubeGeometry(curve,64,width*2.1,8,false),
+      new THREE.MeshBasicMaterial({color:glow,transparent:true,opacity:.10,blending:THREE.AdditiveBlending}));
+    g2.scale.y=0.06;g2.position.y=0.012;scene.add(g2);
+  }
+  return m;
+}
+function railLine(pts){
+  const v=pts.map(p=>{const q=pos3(p[0],p[1]);q.y=.03;return q;});
+  return new THREE.Line(new THREE.BufferGeometry().setFromPoints(v),
+    new THREE.LineBasicMaterial({color:0x44536b,transparent:true,opacity:.85}));
+}
+function station(lat,lng,name){
+  const p=pos3(lat,lng);
+  const d=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.02,16),
+    new THREE.MeshBasicMaterial({color:0xb9c6d6}));
+  d.position.set(p.x,.035,p.z);scene.add(d);
+  const s=labelSprite(name,"#8fa0b5",0.9);s.position.set(p.x,.32,p.z);scene.add(s);
+}
+function addLandmark(lm){
+  const p=pos3(lm.lat,lm.lng);
+  const g=new THREE.Group();g.position.set(p.x,0,p.z);
+  if(lm.type==="tower"){ // スカイツリー：二段コーン＋アンテナ
+    const mat=new THREE.MeshLambertMaterial({color:0x9fb6c8,emissive:0x24455c,emissiveIntensity:.6,transparent:true,opacity:.95});
+    const c1=new THREE.Mesh(new THREE.ConeGeometry(.16,.7,6,1,true),mat);c1.position.y=.35;
+    const c2=new THREE.Mesh(new THREE.ConeGeometry(.09,.45,6,1,true),mat);c2.position.y=.85;
+    const ant=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.35,6),mat);ant.position.y=1.25;
+    const tip=new THREE.Mesh(new THREE.SphereGeometry(.03,10,8),
+      new THREE.MeshBasicMaterial({color:0xff6b6b}));tip.position.y=1.44;
+    g.add(c1,c2,ant,tip);
+    const lab=labelSprite(lm.name,"#c8d8e6",1.6);lab.position.y=1.75;g.add(lab);
+  }else if(lm.type==="temple"){ // 帝釈天：お堂＋寄棟屋根
+    const body=new THREE.Mesh(new THREE.BoxGeometry(.22,.14,.22),
+      new THREE.MeshLambertMaterial({color:0x6b5138}));body.position.y=.07;
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(.2,.14,4),
+      new THREE.MeshLambertMaterial({color:0x8c3a2e,emissive:0x3a1712,emissiveIntensity:.5}));
+    roof.position.y=.21;roof.rotation.y=Math.PI/4;
+    g.add(body,roof);
+    const lab=labelSprite(lm.name,"#e0c9a8",1.4);lab.position.y=.55;g.add(lab);
+  }else{ // 公園：緑の円
+    const c=new THREE.Mesh(new THREE.CircleGeometry(lm.r||0.4,28),
+      new THREE.MeshBasicMaterial({color:0x1c4a33,transparent:true,opacity:.9}));
+    c.rotation.x=-Math.PI/2;c.position.y=.012;g.add(c);
+    const lab=labelSprite(lm.name,"#7fbf9a",1.3);lab.position.y=.3;g.add(lab);
+  }
+  scene.add(g);
+}
+function buildOriginMarker(){
+  originGroup=new THREE.Group();
+  const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.3,4),
+    new THREE.MeshLambertMaterial({color:0xf2f5f8,emissive:0x334455}));
+  cone.position.y=.16;cone.rotation.y=Math.PI/4;
+  const lab=labelSprite("起点","#ffffff",1.0);lab.position.y=.62;
+  originGroup.add(cone,lab);
+  ringsGroup=new THREE.Group();
+  [1,2,3].forEach(r=>{
+    const ring=new THREE.Mesh(new THREE.RingGeometry(r-0.008,r+0.008,96),
+      new THREE.MeshBasicMaterial({color:0x2a3a56,side:THREE.DoubleSide,transparent:true,opacity:.9}));
+    ring.rotation.x=-Math.PI/2;ring.position.y=0.02;ringsGroup.add(ring);
+  });
+  scene.add(originGroup,ringsGroup);
+  moveOriginMarker();
+}
+function moveOriginMarker(){
+  if(!originGroup)return;
+  const p=pos3(origin.lat,origin.lng);
+  originGroup.position.set(p.x,0,p.z);
+  ringsGroup.position.set(p.x,0,p.z);
+  targetGoal.set(p.x*0.6,0,p.z*0.6); // カメラをゆるく追従
+}
+function buildPins(){
+  Object.values(pins).forEach(p=>scene.remove(p.group));
+  pins={};
+  FACILITIES.forEach(f=>{
+    const col=f.dir==="up"?0x35c9d4:0xf0a04e;
+    const h=f.dir==="up"?0.85:0.5;
+    const g=new THREE.Group();
+    const pil=new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,h,10),
+      new THREE.MeshLambertMaterial({color:col,transparent:true}));
+    pil.position.y=h/2;
+    const head=new THREE.Mesh(new THREE.SphereGeometry(f.dir==="up"?.1:.08,18,14),
+      new THREE.MeshLambertMaterial({color:col,emissive:col,emissiveIntensity:.35,transparent:true}));
+    head.position.y=h+.06;head.userData.fid=f.id;
+    const lab=labelSprite(f.name.replace(/（架空）|（区外・墨田区）/g,""),
+      f.dir==="up"?"#9fe6ec":"#ffd9ad",f.dir==="up"?1.7:1.45);
+    lab.position.y=h+.38;
+    g.add(pil,head,lab);
+    const p=pos3(f.lat,f.lng);g.position.set(p.x,0,p.z);
+    scene.add(g);
+    pins[f.id]={group:g,pil,head,lab};
+  });
+}
+function initMap(){
+  const canvas=document.getElementById("stage");
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});}
+  catch(e){canvas.style.display="none";fail.style.display="block";return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1424);
+  scene.fog=new THREE.Fog(0x0c1424,10,18);
+  camera=new THREE.PerspectiveCamera(46,2,0.1,60);
+  scene.add(new THREE.AmbientLight(0xffffff,.75));
+  const dl=new THREE.DirectionalLight(0xbfd4ea,.5);dl.position.set(3,6,2);scene.add(dl);
+
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(13,13),
+    new THREE.MeshLambertMaterial({color:0x101a2e}));
+  ground.rotation.x=-Math.PI/2;scene.add(ground);
+  const grid=new THREE.GridHelper(13,26,0x1b2740,0x16203a);
+  grid.position.y=.005;scene.add(grid);
+
+  // 川（実座標ベースの概形）
+  scene.add(ribbon([[35.782,139.876],[35.770,139.873],[35.760,139.876],[35.752,139.866],
+    [35.744,139.870],[35.734,139.862],[35.724,139.866],[35.712,139.858]],
+    .14,0x1e4a5e,.95,0x39c8dd)); // 中川
+  scene.add(ribbon([[35.782,139.830],[35.758,139.826],[35.732,139.820],[35.706,139.812]],
+    .26,0x18374a,.95,0x2b9db4)); // 荒川・綾瀬川
+  scene.add(ribbon([[35.782,139.892],[35.756,139.888],[35.730,139.894],[35.706,139.900]],
+    .2,0x18374a,.9,0x2b9db4)); // 江戸川
+
+  // 鉄道
+  scene.add(railLine([[35.746,139.828],[35.749,139.839],[35.7448,139.8547],[35.7506,139.8666],[35.752,139.878]])); // 京成本線
+  scene.add(railLine([[35.7448,139.8547],[35.7386,139.8443],[35.732,139.837],[35.727,139.828]])); // 押上線
+  scene.add(railLine([[35.7506,139.8666],[35.7594,139.8757],[35.7695,139.8707]])); // 金町線
+  scene.add(railLine([[35.762,139.825],[35.7666,139.8489],[35.7695,139.8707],[35.771,139.888]])); // 常磐線
+  station(35.7448,139.8547,"青砥");station(35.7506,139.8666,"高砂");
+  station(35.7492,139.8388,"お花茶屋");station(35.7666,139.8489,"亀有");
+  station(35.7695,139.8707,"金町");station(35.7594,139.8757,"柴又");
+  station(35.7386,139.8443,"立石");station(35.7167,139.8571,"新小岩");
+
+  LANDMARKS.forEach(addLandmark);
+  buildOriginMarker();
+  buildPins();
+
+  selRing=new THREE.Mesh(new THREE.RingGeometry(.16,.22,40),
+    new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,transparent:true,opacity:.9}));
+  selRing.rotation.x=-Math.PI/2;selRing.position.y=.025;selRing.visible=false;
+  scene.add(selRing);
+
+  raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
+
+  let drag=false,px=0,py=0,pinchD=0,downT=0;
+  canvas.addEventListener("pointerdown",e=>{drag=true;px=e.clientX;py=e.clientY;
+    downT=performance.now();canvas.classList.add("grabbing");interacted=true;});
+  addEventListener("pointerup",()=>{drag=false;canvas.classList.remove("grabbing");});
+  canvas.addEventListener("pointermove",e=>{
+    if(!drag)return;
+    az-=(e.clientX-px)*0.005;
+    pol=Math.min(1.35,Math.max(0.5,pol-(e.clientY-py)*0.004));
+    px=e.clientX;py=e.clientY;});
+  canvas.addEventListener("wheel",e=>{e.preventDefault();interacted=true;
+    radius=Math.min(14,Math.max(4,radius+e.deltaY*0.008));},{passive:false});
+  canvas.addEventListener("touchmove",e=>{
+    if(e.touches.length===2){
+      const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                         e.touches[0].clientY-e.touches[1].clientY);
+      if(pinchD)radius=Math.min(14,Math.max(4,radius+(pinchD-d)*0.02));
+      pinchD=d;interacted=true;}},{passive:true});
+  canvas.addEventListener("touchend",()=>{pinchD=0;});
+  canvas.addEventListener("pointerup",e=>{
+    if(performance.now()-downT>220)return;
+    const r=canvas.getBoundingClientRect();
+    pointer.x=((e.clientX-r.left)/r.width)*2-1;
+    pointer.y=-((e.clientY-r.top)/r.height)*2+1;
+    raycaster.setFromCamera(pointer,camera);
+    const hit=raycaster.intersectObjects(Object.values(pins).map(p=>p.head))[0];
+    if(hit)selectFacility(hit.object.userData.fid,false);
+  });
+
+  function resize(){
+    const w=canvas.clientWidth,h=canvas.clientHeight;
+    if(canvas.width!==w*renderer.getPixelRatio()){
+      renderer.setSize(w,h,false);
+      camera.aspect=w/h;camera.updateProjectionMatrix();}
+  }
+  (function animate(){
+    requestAnimationFrame(animate);
+    resize();
+    const t=clock.getElapsedTime();
+    if(!interacted&&!reduceMotion)az+=0.0011;
+    target.lerp(targetGoal,0.06);
+    camera.position.set(
+      target.x+radius*Math.sin(pol)*Math.cos(az),
+      radius*Math.cos(pol)*0.9+0.4,
+      target.z+radius*Math.sin(pol)*Math.sin(az));
+    camera.lookAt(target);
+    if(selRing.visible&&!reduceMotion){
+      const s=1+Math.sin(t*3)*0.12;selRing.scale.set(s,s,1);}
+    renderer.render(scene,camera);
+  })();
+}
+function updateMap(visIds){
+  Object.entries(pins).forEach(([id,p])=>{
+    const on=visIds.has(id);
+    p.pil.material.opacity=on?1:0.10;
+    p.head.material.opacity=on?1:0.10;
+    p.head.material.emissiveIntensity=on?0.5:0.05;
+    p.lab.material.opacity=on?1:0.08;
+  });
+  if(selectedId&&!visIds.has(selectedId)){selectedId=null;if(selRing)selRing.visible=false;}
+}
+function setSelectedPin(id){
+  const f=FACILITIES.find(x=>x.id===id);if(!f||!selRing)return;
+  const p=pos3(f.lat,f.lng);
+  selRing.position.set(p.x,.025,p.z);selRing.visible=true;
+}
+
+/* ================= 外部データ ================= */
+async function loadExternal(){
+  if(!DATA_URL)return;
+  try{
+    const r=await fetch(DATA_URL,{cache:"no-store"});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(Array.isArray(j)&&j.length){
+      FACILITIES=j;
+      buildPins();render();
+      dataChip.textContent="外部データ読込済み（"+j.length+"件）";
+      dataChip.classList.add("live");
+    }
+  }catch(e){toast("外部データを読めませんでした。内蔵データで表示します");}
+}
+
+/* ================= boot ================= */
+initMap();
+syncChips();segSync();
+setDir("all");
+loadExternal();
+</script>
+</body>
+</html>
