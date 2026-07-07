@@ -290,12 +290,14 @@ const toKm = (lat,lng)=>({x:(lng-HOME.lng)*KM_LNG, y:(lat-HOME.lat)*KM_LAT});
 const CAPS = [
   {cat:"継続",  items:[["keizoku","良性疾患の継続薬"]]},
   {cat:"注射",  items:[["lhrh","LH-RH注射"],["bcg","膀胱内BCG"]]},
-  {cat:"検査",  items:[["bscope","膀胱鏡"],["female","女性泌尿器外来"]]},
+  {cat:"検査",  items:[["bscope","膀胱鏡"],["female","女性泌尿器外来"],["mrifusion","MRI融合前立腺生検"]]},
   {cat:"外来手術",items:[["botox","膀胱内ボトックス"],["rezum","Rezūm"]]},
-  {cat:"高度手術",items:[["holep","HoLEP"],["tul","TUL（結石）"],["tot","TOT/TVT"],["robot","ロボット手術"]]},
+  {cat:"高度手術",items:[["holep","HoLEP"],["tul","TUL（結石）"],["tot","TOT/TVT"],["robot","ロボット手術"],["eswl","ESWL（結石）"],["aus","人工尿道括約筋"]]},
+  {cat:"専門治療",items:[["snm","仙骨神経刺激（OAB）"],["hydro","膀胱水圧拡張"],["rfa","腎腫瘍ラジオ波"],["microwave","前立腺がんマイクロ波"],["tese","TESE"]]},
 ];
 const CAPNAME = Object.fromEntries(CAPS.flatMap(c=>c.items));
-const UPCAPS = new Set(["holep","tul","tot","robot"]);
+const UPCAPS = new Set(["holep","tul","tot","robot",
+  "eswl","aus","mrifusion","snm","microwave","rfa","hydro","tese"]);
 
 const PRESETS = [
   {id:"p1", dir:"down", name:"排尿障害の薬フォロー", sub:"継続処方できる近所へ", caps:["keizoku"], mode:"AND"},
@@ -623,15 +625,15 @@ let interacted=false,clock=new THREE.Clock();
 const pos3=(lat,lng)=>{const k=toKm(lat,lng);return new THREE.Vector3(k.x,0,-k.y);};
 
 function labelSprite(txt,color,size){
-  const c=document.createElement("canvas");c.width=256;c.height=64;
+  const c=document.createElement("canvas");c.width=384;c.height=64;
   const g=c.getContext("2d");
   g.font="700 26px 'Zen Kaku Gothic New',sans-serif";
   g.shadowColor="rgba(5,10,20,.9)";g.shadowBlur=8;
   g.fillStyle=color;g.textAlign="center";g.textBaseline="middle";
-  g.fillText(txt.length>9?txt.slice(0,9)+"…":txt,128,32);
+  g.fillText(txt.length>13?txt.slice(0,13)+"…":txt,192,32);
   const tx=new THREE.CanvasTexture(c);tx.minFilter=THREE.LinearFilter;
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthWrite:false}));
-  sp.scale.set(size,size*0.25,1);return sp;
+  sp.scale.set(size*1.5,size*0.25,1);return sp;
 }
 function ribbon(pts,width,color,opacity,glow){
   const v=pts.map(p=>pos3(p[0],p[1]));
@@ -709,6 +711,19 @@ function moveOriginMarker(){
   ringsGroup.position.set(p.x,0,p.z);
   targetGoal.set(p.x*0.6,0,p.z*0.6); // カメラをゆるく追従
 }
+function shortName(n){
+  // マップ表示用：法人名などの接頭辞を除いて短くする（リスト・詳細は正式名のまま）
+  let s=n.replace(/（架空）|（区外・墨田区）/g,"");
+  const pre=/^(地方独立行政法人|独立行政法人|国立研究開発法人|国家公務員共済組合連合会|日本私立学校振興・共済事業団|社会医療法人(社団|財団)?|医療法人(社団|財団)?|社会福祉法人|公益財団法人|公益社団法人|一般財団法人|一般社団法人|学校法人)/;
+  if(pre.test(s)){
+    s=s.replace(pre,"");
+    s=s.replace(/^[^会社]{1,10}?[会社](?=.{2,})/,"");  // 法人名（〜会/〜社）を除去
+  }
+  s=s.replace(/^東京都立病院機構/,"").replace(/^東京都立/,"都立");
+  s=s.replace(/^東京女子医科大学附属/,"女子医大");
+  s=s.replace(/^東京慈恵会医科大学/,"慈恵医大");
+  return s||n;
+}
 function buildPins(){
   Object.values(pins).forEach(p=>scene.remove(p.group));
   pins={};
@@ -722,7 +737,7 @@ function buildPins(){
     const head=new THREE.Mesh(new THREE.SphereGeometry(f.dir==="up"?.1:.08,18,14),
       new THREE.MeshLambertMaterial({color:col,emissive:col,emissiveIntensity:.35,transparent:true}));
     head.position.y=h+.06;head.userData.fid=f.id;
-    const lab=labelSprite(f.name.replace(/（架空）|（区外・墨田区）/g,""),
+    const lab=labelSprite(shortName(f.name),
       f.dir==="up"?"#9fe6ec":"#ffd9ad",f.dir==="up"?1.7:1.45);
     lab.position.y=h+.38;
     g.add(pil,head,lab);
@@ -748,14 +763,20 @@ function initMap(){
   const grid=new THREE.GridHelper(13,26,0x1b2740,0x16203a);
   grid.position.y=.005;scene.add(grid);
 
-  // 川（実座標ベースの概形）
+  // 川（実座標ベースの概形）— 水面とわかる明るめの青に
   scene.add(ribbon([[35.782,139.876],[35.770,139.873],[35.760,139.876],[35.752,139.866],
     [35.744,139.870],[35.734,139.862],[35.724,139.866],[35.712,139.858]],
-    .14,0x1e4a5e,.95,0x39c8dd)); // 中川
+    .14,0x2b7ca6,.95,0x39c8dd)); // 中川
   scene.add(ribbon([[35.782,139.830],[35.758,139.826],[35.732,139.820],[35.706,139.812]],
-    .26,0x18374a,.95,0x2b9db4)); // 荒川・綾瀬川
+    .26,0x266d94,.95,0x2b9db4)); // 荒川・綾瀬川
   scene.add(ribbon([[35.782,139.892],[35.756,139.888],[35.730,139.894],[35.706,139.900]],
-    .2,0x18374a,.9,0x2b9db4)); // 江戸川
+    .2,0x266d94,.9,0x2b9db4)); // 江戸川
+  // 川の名前ラベル
+  const riverLabel=(lat,lng,t)=>{const s=labelSprite(t,"#6fc4e0",1.0);
+    const p=pos3(lat,lng);s.position.set(p.x,.22,p.z);scene.add(s);};
+  riverLabel(35.760,139.876,"中川");
+  riverLabel(35.758,139.826,"荒川");
+  riverLabel(35.756,139.888,"江戸川");
 
   // 鉄道
   scene.add(railLine([[35.746,139.828],[35.749,139.839],[35.7448,139.8547],[35.7506,139.8666],[35.752,139.878]])); // 京成本線
