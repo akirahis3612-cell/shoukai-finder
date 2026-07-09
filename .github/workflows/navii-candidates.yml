@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       hp_check:
-        description: "各院HPを突合する（時間がかかる）"
+        description: "各院HPを突合する（数分かかるが、対応内容のヒントが増える）"
         type: boolean
-        default: false
+        default: true
 
 jobs:
   build:

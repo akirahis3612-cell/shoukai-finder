@@ -156,7 +156,8 @@ HINTS = {
     "addr": ["所在地", "住所"],
     "tel":  ["電話番号", "電話", "連絡先"],
     "url":  ["ホームページ", "ＵＲＬ", "URL", "ウェブサイト"],
-    "spec": ["診療科目", "診療科", "標榜科"],
+    # ★診療科目名(テキスト)を最優先。コード列「診療科目コード」を先に拾わないよう名称を先頭に。
+    "spec": ["診療科目名", "診療科名", "標榜科", "診療科目", "診療科"],
 }
 
 def detect_cols(header):
@@ -266,7 +267,10 @@ def hp_check(cands):
             url = "http://" + url
         try:
             r = requests.get(url, headers=UA, timeout=20)
-            text = r.text
+            # 日本のクリニックサイトは Shift_JIS/EUC が多い。誤判定だと文言照合が効かないため
+            # apparent_encoding で明示デコード（失敗文字は無視）。
+            enc = r.apparent_encoding or r.encoding or "utf-8"
+            text = r.content.decode(enc, errors="ignore")
         except Exception as e:
             c.setdefault("hp_note", f"取得失敗: {type(e).__name__}")
             time.sleep(1.0)
