@@ -10,8 +10,10 @@
 | `shoukai-finder-katsushika-v3.1.html` | アプリ本体（単一HTML、Leaflet + 国土地理院淡色タイル） |
 | `facilities.json` | 施設データ（アプリが raw URL から fetch。上り14＋下り5＝19件） |
 | `fetch_kosei.py` | データ生成器。厚生局名簿 → facilities.json |
-| `geocode_cache.json` | 住所→座標キャッシュ（GSIジオコーダ節約用） |
+| `fetch_navii.py` | ナビイ半自動化・第1段。ナビイ診療所オープンデータ → 泌尿器科クリニックの医師確認表（navii_candidates.csv/html）。facilities.json は触らない |
+| `geocode_cache.json` | 住所→座標キャッシュ（GSIジオコーダ節約用。fetch_kosei/navii で共有） |
 | `.github/workflows/update-data.yml` | 毎月5日 朝6時JST に自動更新（workflow_dispatch も可） |
+| `.github/workflows/navii-candidates.yml` | ナビイ候補の医師確認表を手動生成（成果物はArtifact） |
 
 - DATA_URL: `https://raw.githubusercontent.com/akirahis3612-cell/shoukai-finder/main/facilities.json`
 - HTML内の旧 Three.js 3D地図コードはコメントアウトで保存（復元用）。
@@ -50,6 +52,13 @@
 
 1. **ナビイ半自動化**（次の大物）: 厚労省 医療機能情報提供制度のオープンデータから
    下りクリニックの対応内容（膀胱鏡・LH-RH等）を抽出 → HP突合 → 医師確認表 → DOWN_FACILITIES拡充
+   - 第1段【実装済】`fetch_navii.py`：診療所オープンデータ→葛飾＋隣接の泌尿器科候補→医師確認表を出力。
+     ナビイ実データ = 02-1施設票 / 02-2診療科票の2票組（全国一括CSV, UTF-8-BOM, 半年更新, 最新20251201,
+     https://www.mhlw.go.jp/content/11121000/）。**初回は必ず `--dump-columns` で実列を確認**し
+     `CAP_KEYWORDS` を調整（膀胱鏡/LH-RH等の細かい列がオープンデータに収録されているかは実データ依存）。
+     ローカルPythonが無い環境は `navii-candidates.yml`（手動実行）で回す。
+   - 次段【未】確認表を医師レビュー → `fetch_navii.py --to-down-stub 確認済み.csv` でJSON化 →
+     `DOWN_FACILITIES` に追記 → fetch_kosei.py 再生成。将来は down を JSON 外部化して両者で共有。
 2. **エリア拡大**: AREA_FILTER 変更だけで届出capは自動対応。都内全域だと泌尿器cap付き病院は138院
    （HP調査＝手動capの監修が主なコスト）。地図は Leaflet 化済みなので拡大に耐える
 3. **クラスタリング**: 施設数が増えたら Leaflet.markercluster を追加

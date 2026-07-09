@@ -1,0 +1,49 @@
+name: navii-candidates
+
+# ナビイ半自動化・第1段：診療所オープンデータ → 泌尿器科クリニックの医師確認表を生成。
+# 手動実行のみ（結果はアーティファクトで受け取る。リポジトリのデータは変更しない）。
+on:
+  workflow_dispatch:
+    inputs:
+      hp_check:
+        description: "各院HPを突合する（時間がかかる）"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install requests openpyxl
+
+      # まずスキーマ確認（ログで実列名・cap関連列・サンプルを見る）
+      - name: Dump columns (schema check)
+        run: python fetch_navii.py --dump-columns
+
+      # 本抽出 → navii_candidates.csv / .html
+      - name: Build candidates
+        run: |
+          if [ "${{ inputs.hp_check }}" = "true" ]; then
+            python fetch_navii.py --hp-check
+          else
+            python fetch_navii.py
+          fi
+
+      - name: Upload candidate table
+        uses: actions/upload-artifact@v4
+        with:
+          name: navii-candidates
+          path: |
+            navii_candidates.csv
+            navii_candidates.html
+          if-no-files-found: warn
+
+# 医師がURLで開きたい場合は、上のアップロードの代わりに navii_candidates.html を
+# リポジトリにコミットして githack で開く運用も可（下り確定前の作業成果物のため既定はアーティファクト）。
