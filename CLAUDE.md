@@ -1,0 +1,63 @@
+# 紹介先ファインダー（葛飾区周辺・泌尿器科）
+
+医師外来向けの紹介先検索ツール。開発者は泌尿器科医（コードは Claude が支援）。
+臨床判断に関わるデータ変更は必ず医師の確認を取ってから確定すること。
+
+## 構成
+
+| ファイル | 役割 |
+|---|---|
+| `shoukai-finder-katsushika-v3.1.html` | アプリ本体（単一HTML、Leaflet + 国土地理院淡色タイル） |
+| `facilities.json` | 施設データ（アプリが raw URL から fetch。上り14＋下り5＝19件） |
+| `fetch_kosei.py` | データ生成器。厚生局名簿 → facilities.json |
+| `geocode_cache.json` | 住所→座標キャッシュ（GSIジオコーダ節約用） |
+| `.github/workflows/update-data.yml` | 毎月5日 朝6時JST に自動更新（workflow_dispatch も可） |
+
+- DATA_URL: `https://raw.githubusercontent.com/akirahis3612-cell/shoukai-finder/main/facilities.json`
+- HTML内の旧 Three.js 3D地図コードはコメントアウトで保存（復元用）。
+
+## データパイプライン（fetch_kosei.py）
+
+1. 関東信越厚生局 `chousa/kijyun.html` から医科名簿ZIP（`shisetsu_ika_*.zip`）を取得
+   - ページ構成は2026-07時点。都県別Excelは廃止され全都県一括ZIP（中に都県別xlsx、東京=prefix 13）
+2. Excel解析：ヘッダ4行目、列=医療機関名称/医療機関所在地(住所)/電話番号/受理届出名称
+   - 「所在地（郵便番号）」列があるため addr のヒントは「住所」優先（detect_columns はヒント優先順）
+3. `CAP_RULES` で届出名称→cap 変換（AREA_FILTER: 葛飾・足立・江戸川・墨田・荒川）
+4. `MANUAL_INFO` をマージ（施設名部分一致）：届出制度がない手技（HoLEP/TURP/TUL等）を
+   各院公式サイトの手術実績から手動監修したもの＋公式URL。**自動再生成でも消えない設計**
+5. `DOWN_FACILITIES`（下り＝かかりつけ5院、完全手動、座標ハードコード）を連結
+6. ジオコーディング：GSI AddressSearch（住所に「東京都」を補完、cache使用、失敗時は区中心+approx）
+
+## cap 分類（2026-07 医師監修済み）
+
+- 自動（届出あり）: robot, eswl, aus, mrifusion, snm, microwave, rfa, hydro, tese, lsc, rasc
+- 手動（届出制度なし→HP実績ベース）: holep, turp, tueb, tul, pnl, pul, tot, rezum
+- 定義済みだが該当ゼロ: pvp（PVP/CVP）, rrp（開腹前立腺全摘）
+- 下り用: keizoku, lhrh, bcg, bscope, female, botox
+- 注意: lsc/rasc の届出は産婦人科主体の施設がある（泌尿器科ルートで紹介可能かは未確認）
+
+## 運用上の注意・ハマりどころ
+
+- 厚生局サイトは一部環境からタイムアウトするが、**GitHub Actions ランナーからは取得成功**（実証済み）
+- GitHub の Web エディタで cron 行を編集すると、インラインの説明ヒント
+  （"Runs at ..."）が本文に混入して YAML が壊れることがある（一度発生・修正済み）
+- raw.githubusercontent.com は叩きすぎると 429（1時間弱で解除）
+- GSIジオコーダは 0.25s/req のスリープを入れて配慮。geocode_cache.json をコミットして再利用
+- 名簿Excelの届出名称は NFKC 正規化＋空白除去（norm()）後にキーワード照合
+- 施設名の短縮表示は HTML 内 `shortName()`（法人名prefix除去。慈恵/女子医大/都立の特例あり）
+
+## ロードマップ（医師と合意済みの方向性）
+
+1. **ナビイ半自動化**（次の大物）: 厚労省 医療機能情報提供制度のオープンデータから
+   下りクリニックの対応内容（膀胱鏡・LH-RH等）を抽出 → HP突合 → 医師確認表 → DOWN_FACILITIES拡充
+2. **エリア拡大**: AREA_FILTER 変更だけで届出capは自動対応。都内全域だと泌尿器cap付き病院は138院
+   （HP調査＝手動capの監修が主なコスト）。地図は Leaflet 化済みなので拡大に耐える
+3. **クラスタリング**: 施設数が増えたら Leaflet.markercluster を追加
+4. **公開**: GitHub Pages を有効化すれば院内どの端末からも URL で開ける（Settings > Pages、要オーナー操作）
+5. holep/tul 等の手動capの年1回棚卸し（MANUAL_INFO のコメント参照）
+
+## 検証方法
+
+- ローカル: HTML をブラウザで開く（DATA_URL fetch は file:// からでも動く）
+- コミット後: `https://rawcdn.githack.com/akirahis3612-cell/shoukai-finder/<sha>/shoukai-finder-katsushika-v3.1.html`
+- データ再生成: `python3 fetch_kosei.py`（全自動）または `--local 名簿.xlsx`、`--dump-names` で届出名称一覧
