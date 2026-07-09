@@ -6,7 +6,8 @@
 <title>紹介先ファインダー — 葛飾区</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
@@ -66,19 +67,39 @@ header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 2px 
 /* ---- map ---- */
 .mapwrap{position:relative;border-radius:18px;overflow:hidden;background:#dde7ee;
   box-shadow:0 14px 40px rgba(12,20,36,.14);margin-bottom:16px}
-#stage{display:block;width:100%;height:52vh;min-height:360px;max-height:560px;
-  touch-action:none;cursor:grab}
-#stage.grabbing{cursor:grabbing}
-.map-title{position:absolute;top:16px;left:18px;color:#1f2733;pointer-events:none}
+#stage{display:block;width:100%;height:52vh;min-height:360px;max-height:560px}
+.mapwrap .leaflet-container{font-family:inherit;background:#dde7ee}
+.map-title{position:absolute;top:14px;left:14px;color:#1f2733;pointer-events:none;
+  z-index:1001;background:rgba(255,255,255,.82);backdrop-filter:blur(4px);
+  padding:8px 14px;border-radius:12px;box-shadow:0 2px 8px rgba(12,20,36,.10)}
 .map-title .mt1{font-family:"Shippori Mincho",serif;font-size:16px;letter-spacing:.12em}
 .map-title .mt2{font-size:10.5px;color:#66707c;margin-top:2px}
-.map-legend{position:absolute;bottom:14px;left:18px;display:flex;gap:14px;
-  font-size:11px;color:#4d5a66;pointer-events:none}
+.map-legend{position:absolute;bottom:14px;left:14px;display:flex;gap:12px;
+  font-size:11px;color:#4d5a66;pointer-events:none;z-index:1001;
+  background:rgba(255,255,255,.82);backdrop-filter:blur(4px);
+  padding:6px 12px;border-radius:10px;box-shadow:0 2px 8px rgba(12,20,36,.10)}
 .map-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
-.dot.u{background:#0f8ea0}.dot.d{background:#d9822b}
-.map-hint{position:absolute;bottom:14px;right:16px;font-size:10.5px;color:#7a8590;pointer-events:none}
-.webgl-fail{padding:36px;text-align:center;color:#66707c;font-size:13px;display:none}
-.presets{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;max-width:220px}
+.dot.u{background:#0f8ea0}.dot.d{background:#d9822b}.dot.o{background:#d9453a}
+/* ---- Leaflet ピン ---- */
+.lpin{background:none;border:0}
+.pinwrap{position:relative;width:16px;height:16px}
+.pindot{width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;
+  box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:.15s}
+.pu .pindot{background:#0f8ea0}.pd .pindot{background:#d9822b}
+.pinlab{position:absolute;left:20px;top:-3px;font-size:11px;font-weight:700;
+  white-space:nowrap;line-height:1.6;background:rgba(255,255,255,.90);
+  padding:0 8px;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.18);
+  pointer-events:none;transition:.15s}
+.pu .pinlab{color:#0b6b74}.pd .pinlab{color:#a75f1a}
+.pinwrap.sel .pindot{transform:scale(1.4);
+  box-shadow:0 0 0 5px rgba(18,147,158,.28),0 1px 5px rgba(0,0,0,.4)}
+.pinwrap.sel .pinlab{background:#1f2733;color:#fff}
+.pinwrap.dim{opacity:.25;filter:grayscale(.7)}
+.pinwrap.dim .pinlab{display:none}
+.origin-pin{width:22px;height:22px;background:#d9453a;border:2.5px solid #fff;
+  box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+  box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.presets{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;max-width:220px;z-index:1001}
 .preset{border:1px solid rgba(20,35,50,.12);background:rgba(255,255,255,.86);
   backdrop-filter:blur(6px);color:var(--ink);border-radius:10px;padding:8px 12px;
   font-size:12px;text-align:left;cursor:pointer;transition:.15s;line-height:1.3}
@@ -216,8 +237,7 @@ button.print{background:#fff;border:1px solid var(--line)!important;color:var(--
   </div>
 
   <div class="mapwrap">
-    <canvas id="stage" aria-label="葛飾区の3Dマップ"></canvas>
-    <div class="webgl-fail" id="fail">3D表示ができない環境です。下のリストからご利用ください。</div>
+    <div id="stage" aria-label="葛飾区周辺の地図" role="application"></div>
     <div class="map-title">
       <div class="mt1">葛 飾 区</div>
       <div class="mt2" id="mapSub">起点：自院 ／ 輪は 1・2・3 km</div>
@@ -225,9 +245,8 @@ button.print{background:#fff;border:1px solid var(--line)!important;color:var(--
     <div class="map-legend">
       <span><span class="dot u"></span>上り</span>
       <span><span class="dot d"></span>下り</span>
-      <span style="color:#66707c">▲ ランドマーク</span>
+      <span><span class="dot o"></span>起点</span>
     </div>
-    <div class="map-hint">ドラッグ回転 ／ ピンチ・ホイール拡縮 ／ ピンをタップ</div>
     <div class="presets" id="presets" role="group" aria-label="外来シナリオ"></div>
   </div>
 
@@ -646,7 +665,85 @@ let tT;
 function toast(m){const t=document.getElementById("toast");t.textContent=m;
   t.classList.add("on");clearTimeout(tT);tT=setTimeout(()=>t.classList.remove("on"),2000);}
 
-/* ================= Three.js ================= */
+/* ================= Leaflet 2D地図 ================= */
+function shortName(n){
+  // マップ表示用：法人名などの接頭辞を除いて短くする（リスト・詳細は正式名のまま）
+  let s=n.replace(/（架空）|（区外・墨田区）/g,"");
+  const pre=/^(地方独立行政法人|独立行政法人|国立研究開発法人|国家公務員共済組合連合会|日本私立学校振興・共済事業団|社会医療法人(社団|財団)?|医療法人(社団|財団)?|社会福祉法人|公益財団法人|公益社団法人|一般財団法人|一般社団法人|学校法人)/;
+  if(pre.test(s)){
+    s=s.replace(pre,"");
+    s=s.replace(/^[^会社]{1,10}?[会社](?=.{2,})/,"");  // 法人名（〜会/〜社）を除去
+  }
+  s=s.replace(/^東京都立病院機構/,"").replace(/^東京都立/,"都立");
+  s=s.replace(/^東京女子医科大学附属/,"女子医大");
+  s=s.replace(/^東京慈恵会医科大学/,"慈恵医大");
+  return s||n;
+}
+let map=null,originMarker=null,originRings=[],markers={},lastVis=null;
+
+function pinIcon(f,sel,dim){
+  return L.divIcon({className:"lpin",
+    html:`<div class="pinwrap ${f.dir==="up"?"pu":"pd"}${sel?" sel":""}${dim?" dim":""}"><div class="pindot"></div><div class="pinlab">${shortName(f.name)}</div></div>`,
+    iconSize:[16,16],iconAnchor:[8,8]});
+}
+function initMap(){
+  map=L.map("stage",{zoomControl:false});
+  L.control.zoom({position:"bottomright"}).addTo(map);
+  // 国土地理院 淡色タイル（無料・出典表記のみ・日本の地図として見やすい）
+  L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",{
+    attribution:'&copy; <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>',
+    maxZoom:18,minZoom:10}).addTo(map);
+  map.setView([HOME.lat,HOME.lng],13);
+  const oIc=L.divIcon({className:"lpin",html:'<div class="origin-pin"></div>',
+    iconSize:[24,24],iconAnchor:[12,22]});
+  originMarker=L.marker([origin.lat,origin.lng],
+    {icon:oIc,zIndexOffset:1000,interactive:false}).addTo(map);
+  originRings=[1,2,3].map(r=>L.circle([origin.lat,origin.lng],
+    {radius:r*1000,color:"#7d8ea4",weight:1,dashArray:"4 5",fill:false,
+     interactive:false}).addTo(map));
+  buildPins();
+}
+function moveOriginMarker(){
+  if(!map)return;
+  originMarker.setLatLng([origin.lat,origin.lng]);
+  originRings.forEach(c=>c.setLatLng([origin.lat,origin.lng]));
+  map.panTo([origin.lat,origin.lng]);
+}
+function buildPins(){
+  if(!map)return;
+  Object.values(markers).forEach(m=>map.removeLayer(m.marker));
+  markers={};
+  FACILITIES.forEach(f=>{
+    const m=L.marker([f.lat,f.lng],
+      {icon:pinIcon(f,false,false),riseOnHover:true,keyboard:false});
+    m.on("click",()=>selectFacility(f.id,false));
+    m.addTo(map);
+    markers[f.id]={marker:m,f};
+  });
+  const pts=FACILITIES.map(f=>[f.lat,f.lng]);
+  pts.push([origin.lat,origin.lng]);
+  map.fitBounds(L.latLngBounds(pts).pad(0.15));
+}
+function refreshIcons(){
+  Object.values(markers).forEach(({marker,f})=>{
+    const on=!lastVis||lastVis.has(f.id);
+    const sel=f.id===selectedId;
+    marker.setIcon(pinIcon(f,sel,!on));
+    marker.setZIndexOffset(sel?900:(on?100:0));
+  });
+}
+function updateMap(visIds){
+  lastVis=visIds;
+  if(selectedId&&!visIds.has(selectedId)) selectedId=null;
+  refreshIcons();
+}
+function setSelectedPin(id){
+  refreshIcons();
+  const f=FACILITIES.find(x=>x.id===id);
+  if(f&&map) map.panTo([f.lat,f.lng]);
+}
+
+/* ---- 以下、旧Three.js 3Dコード（Leaflet化により無効化。復元用に保持） ----
 const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
 let scene,camera,renderer,pins={},selRing=null,raycaster,pointer;
 let originGroup=null,ringsGroup=null;
@@ -906,6 +1003,8 @@ function setSelectedPin(id){
   const p=pos3(f.lat,f.lng);
   selRing.position.set(p.x,.025,p.z);selRing.visible=true;
 }
+
+---- 旧3Dコードここまで ---- */
 
 /* ================= 外部データ ================= */
 async function loadExternal(){
