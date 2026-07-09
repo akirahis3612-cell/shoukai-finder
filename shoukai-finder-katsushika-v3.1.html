@@ -297,13 +297,17 @@ const CAPS = [
   {cat:"継続",  items:[["keizoku","良性疾患の継続薬"]]},
   {cat:"注射",  items:[["lhrh","LH-RH注射"],["bcg","膀胱内BCG"]]},
   {cat:"検査",  items:[["bscope","膀胱鏡"],["female","女性泌尿器外来"],["mrifusion","MRI融合前立腺生検"]]},
-  {cat:"外来手術",items:[["botox","膀胱内ボトックス"],["rezum","Rezūm"]]},
-  {cat:"高度手術",items:[["holep","HoLEP"],["tul","TUL（結石）"],["tot","TOT/TVT"],["robot","ロボット手術"],["eswl","ESWL（結石）"],["aus","人工尿道括約筋"]]},
-  {cat:"専門治療",items:[["snm","仙骨神経刺激（OAB）"],["hydro","膀胱水圧拡張"],["rfa","腎腫瘍ラジオ波"],["microwave","前立腺がんマイクロ波"],["tese","TESE"]]},
+  {cat:"外来手術",items:[["botox","膀胱内ボトックス"],["rezum","Rezūm/WAVE"],["pul","ウロリフト（PUL）"]]},
+  {cat:"前立腺肥大手術",items:[["holep","HoLEP"],["turp","TURP"],["tueb","TUEB"],["pvp","PVP/CVP（レーザー蒸散）"]]},
+  {cat:"結石手術",items:[["tul","TUL"],["eswl","ESWL"],["pnl","PNL（経皮的砕石）"]]},
+  {cat:"がん手術",items:[["robot","ロボット支援手術"],["rrp","開腹前立腺全摘（RRP/RPP）"],["rfa","腎腫瘍ラジオ波"],["microwave","前立腺がんマイクロ波"]]},
+  {cat:"女性・骨盤底",items:[["tot","TOT/TVT"],["lsc","LSC（仙骨腟固定）"],["rasc","RASC（ロボット仙骨腟固定）"],["snm","仙骨神経刺激（OAB）"],["hydro","膀胱水圧拡張"]]},
+  {cat:"その他専門",items:[["aus","人工尿道括約筋"],["tese","TESE"]]},
 ];
 const CAPNAME = Object.fromEntries(CAPS.flatMap(c=>c.items));
 const UPCAPS = new Set(["holep","tul","tot","robot",
-  "eswl","aus","mrifusion","snm","microwave","rfa","hydro","tese"]);
+  "eswl","aus","mrifusion","snm","microwave","rfa","hydro","tese",
+  "turp","tueb","pvp","rrp","pul","pnl","lsc","rasc"]);
 
 const PRESETS = [
   {id:"p1", dir:"down", name:"排尿障害の薬フォロー", sub:"継続処方できる近所へ", caps:["keizoku"], mode:"AND"},

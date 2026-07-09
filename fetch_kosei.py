@@ -63,21 +63,27 @@ CAP_RULES = [
      "any": ["膀胱水圧拡張"]},
     {"cap": "tese",    # 精巣内精子採取術
      "any": ["精巣内精子採取"]},
+    {"cap": "lsc",     # 腹腔鏡下仙骨腟固定術（ロボット支援含む）
+     "any": ["腹腔鏡下仙骨腟固定術"]},
+    {"cap": "rasc",    # ロボット支援仙骨腟固定術
+     "all": ["仙骨腟固定術", "内視鏡手術用支援機器"]},
 ]
 
 # 手動監修情報（施設名の部分一致でマージ）。毎月の自動再生成でも消えない。
 # caps: 公式サイトの診療内容・手術実績で確認した届出外の対応手技（2026-07確認）
 # ★ここが臨床監修の本体その2。年1回程度は各院HPと突き合わせて見直すこと。
 MANUAL_INFO = {
-    "イムス東京葛飾総合病院": {"caps": ["holep", "tul", "tot", "rezum"],
+    "イムス東京葛飾総合病院": {
+        "caps": ["holep", "tul", "tot", "rezum", "pul", "pnl", "rasc"],
         "url": "https://ims-tokyo-katsushika.com/"},
-    "葛飾医療センター": {"caps": ["holep", "tul", "botox"],
+    "葛飾医療センター": {"caps": ["holep", "tueb", "tul", "botox", "pnl"],
         "url": "https://www.jikei.ac.jp/hospital/katsushika/"},
-    "東部地域病院": {"caps": ["holep", "tul", "rezum"],
+    "東部地域病院": {"caps": ["holep", "turp", "tul", "rezum"],
         "url": "https://www.tmhp.jp/tobu/"},
-    "同愛記念病院": {"caps": ["holep", "tul", "rezum"],
+    "同愛記念病院": {"caps": ["holep", "tueb", "tul", "rezum"],
         "url": "https://www.doai.jp/"},
-    "足立医療センター": {"caps": ["tul"], "url": "https://twmu-amc.jp/"},
+    "足立医療センター": {"caps": ["tul", "turp", "pul"],
+        "url": "https://twmu-amc.jp/"},
     "墨東病院": {"caps": ["tul"], "url": "https://www.tmhp.jp/bokutoh/"},
     "平成立石病院": {"caps": ["tul"], "url": "https://www.heisei-tateishi.net/"},
     "東京臨海病院": {"caps": ["tul"], "url": "https://www.tokyorinkai.jp/"},
