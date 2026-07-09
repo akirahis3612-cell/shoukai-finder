@@ -65,6 +65,74 @@ CAP_RULES = [
      "any": ["精巣内精子採取"]},
 ]
 
+# 手動監修情報（施設名の部分一致でマージ）。毎月の自動再生成でも消えない。
+# caps: 公式サイトの診療内容・手術実績で確認した届出外の対応手技（2026-07確認）
+# ★ここが臨床監修の本体その2。年1回程度は各院HPと突き合わせて見直すこと。
+MANUAL_INFO = {
+    "イムス東京葛飾総合病院": {"caps": ["holep", "tul", "tot", "rezum"],
+        "url": "https://ims-tokyo-katsushika.com/"},
+    "葛飾医療センター": {"caps": ["holep", "tul", "botox"],
+        "url": "https://www.jikei.ac.jp/hospital/katsushika/"},
+    "東部地域病院": {"caps": ["holep", "tul", "rezum"],
+        "url": "https://www.tmhp.jp/tobu/"},
+    "同愛記念病院": {"caps": ["holep", "tul", "rezum"],
+        "url": "https://www.doai.jp/"},
+    "足立医療センター": {"caps": ["tul"], "url": "https://twmu-amc.jp/"},
+    "墨東病院": {"caps": ["tul"], "url": "https://www.tmhp.jp/bokutoh/"},
+    "平成立石病院": {"caps": ["tul"], "url": "https://www.heisei-tateishi.net/"},
+    "東京臨海病院": {"caps": ["tul"], "url": "https://www.tokyorinkai.jp/"},
+    "博慈会記念総合病院": {"caps": ["tul", "tot"],
+        "url": "https://hakujikai.or.jp/kinen/"},
+    "森山記念病院": {"caps": ["tul"], "url": "https://mk.moriyamaikai.or.jp/"},
+    "はせがわ病院": {"caps": [], "url": "https://seishukai.or.jp/"},
+    "江戸川病院": {"caps": [], "url": "https://www.edogawa.or.jp/"},
+}
+
+# 下り（かかりつけ・逆紹介先）。実在施設、公式サイトで対応範囲を確認（2026-07）。
+# 自動取得の対象外のため手動管理。caps はHP記載ベースの保守的な判定 → 要臨床監修。
+DOWN_FACILITIES = [
+    {"id": "dn001", "name": "立石駅前泌尿器・内科外科クリニック", "dir": "down",
+     "real": True, "lat": 35.736588, "lng": 139.845261,
+     "addr": "葛飾区立石1-7-25 1F", "tel": "03-5670-3366",
+     "url": "https://tateishi-urology.com/",
+     "station": "京成立石駅", "walk": 4, "bus": "", "bf": True,
+     "hours": "土曜午後も診療（HP参照）",
+     "caps": ["keizoku", "rezum"],
+     "source": "公式サイト（日帰りWAVE治療・泌尿器一般）"},
+    {"id": "dn002", "name": "井口腎泌尿器科 亀有", "dir": "down",
+     "real": True, "lat": 35.765789, "lng": 139.84726,
+     "addr": "葛飾区亀有3-7-7", "tel": "03-3838-8721",
+     "url": "https://www.iguchi-jinhinyoki-kameari.jp/",
+     "station": "亀有駅", "walk": 1, "bus": "", "bf": True,
+     "hours": "HP参照（人工透析併設）",
+     "caps": ["keizoku"],
+     "source": "公式サイト（泌尿器一般・PSA/結石フォロー・透析）"},
+    {"id": "dn003", "name": "井口腎泌尿器科・内科 新小岩", "dir": "down",
+     "real": True, "lat": 35.716011, "lng": 139.860214,
+     "addr": "葛飾区新小岩1-49-10", "tel": "03-6231-5931",
+     "url": "https://www.iguchi-jinhinyoki-shinkoiwa.jp/",
+     "station": "新小岩駅", "walk": None, "bus": "", "bf": True,
+     "hours": "HP参照（人工透析併設）",
+     "caps": ["keizoku"],
+     "source": "公式サイト（泌尿器一般・透析）"},
+    {"id": "dn004", "name": "ばんどうクリニック", "dir": "down",
+     "real": True, "lat": 35.74741, "lng": 139.827118,
+     "addr": "葛飾区堀切3-7-5 斉藤ビル1階", "tel": "03-6662-8255",
+     "url": "http://bando-clinic.com/",
+     "station": "堀切菖蒲園駅", "walk": 1, "bus": "", "bf": True,
+     "hours": "HP参照",
+     "caps": ["keizoku", "female"],
+     "source": "公式サイト（内科・泌尿器科、女性のための泌尿器科）"},
+    {"id": "dn005", "name": "金町中央病院", "dir": "down",
+     "real": True, "lat": 35.763023, "lng": 139.865677,
+     "addr": "葛飾区金町1-9-1", "tel": "03-3607-2001",
+     "url": "https://www.reiroukai.or.jp/",
+     "station": "金町駅", "walk": None, "bus": "", "bf": True,
+     "hours": "HP参照",
+     "caps": ["keizoku"],
+     "source": "公式サイト（泌尿器科外来：排尿障害・結石・前立腺がん等）"},
+]
+
 GSI_GEOCODER = "https://msearch.gsi.go.jp/address-search/AddressSearch?q="
 GEOCODE_CACHE = Path("geocode_cache.json")
 OUTPUT = Path("facilities.json")
@@ -227,7 +295,14 @@ def build_facilities(records, do_geocode=True):
     for i, ((name, addr), f) in enumerate(sorted(fac.items())):
         ll = geocode(addr, cache, do_geocode)
         approx = len(ll) == 3
-        out.append({
+        # 手動監修情報のマージ（部分一致）
+        manual_caps, url = [], ""
+        for key, info in MANUAL_INFO.items():
+            if key in name:
+                manual_caps = info.get("caps", [])
+                url = info.get("url", "")
+                break
+        entry = {
             "id": f"up{i:03d}",
             "name": name,
             "dir": "up",
@@ -235,16 +310,21 @@ def build_facilities(records, do_geocode=True):
             "lat": ll[0], "lng": ll[1],
             "addr": addr,
             "tel": f["tel"] or "要確認",
-            "url": "",                       # 公式サイトは手動 or 別途収集
+            "url": url,
             "station": "", "walk": None,     # 駅情報は次フェーズ
             "bus": "", "bf": True,
             "hours": "紹介予約制（要確認）" + ("／位置は概算" if approx else ""),
-            "caps": sorted(f["caps"]),
+            "caps": sorted(f["caps"] | set(manual_caps)),
             "source": "関東信越厚生局 届出受理医療機関名簿",
             "todoke": sorted(set(f["todoke"])),  # 監査用に元の届出名称を残す
-        })
+        }
+        if manual_caps:
+            entry["manual_caps"] = sorted(set(manual_caps))
+            entry["source"] += "＋公式サイト（手動監修）"
+        out.append(entry)
     GEOCODE_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
-    print(f"  施設 {len(out)} 件")
+    out += DOWN_FACILITIES
+    print(f"  施設 {len(out)} 件（上り{len(out)-len(DOWN_FACILITIES)}＋下り{len(DOWN_FACILITIES)}）")
     return out
 
 # ============================== main ==============================

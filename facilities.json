@@ -31,7 +31,7 @@
   "lng": 139.774323,
   "addr": "荒川区東日暮里五丁目45番7号",
   "tel": "03-3807-8866",
-  "url": "",
+  "url": "https://seishukai.or.jp/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -54,20 +54,30 @@
   "lng": 139.85257,
   "addr": "葛飾区西新小岩四丁目18番1号",
   "tel": "03-5670-9901",
-  "url": "",
+  "url": "https://ims-tokyo-katsushika.com/",
   "station": "",
   "walk": null,
   "bus": "",
   "bf": true,
   "hours": "紹介予約制（要確認）",
   "caps": [
+   "holep",
+   "rezum",
    "robot",
-   "snm"
+   "snm",
+   "tot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "仙骨神経刺激装置植込術及び仙骨神経刺激装置交換術(過活動膀胱)",
    "腹腔鏡下前立腺悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)"
+  ],
+  "manual_caps": [
+   "holep",
+   "rezum",
+   "tot",
+   "tul"
   ]
  },
  {
@@ -79,18 +89,24 @@
   "lng": 139.749832,
   "addr": "足立区鹿浜五丁目11番1号",
   "tel": "03-3899-1311",
-  "url": "",
+  "url": "https://hakujikai.or.jp/kinen/",
   "station": "",
   "walk": null,
   "bus": "",
   "bf": true,
   "hours": "紹介予約制（要確認）",
   "caps": [
-   "hydro"
+   "hydro",
+   "tot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "膀胱水圧拡張術及びハンナ型間質性膀胱炎手術(経尿道)"
+  ],
+  "manual_caps": [
+   "tot",
+   "tul"
   ]
  },
  {
@@ -102,7 +118,7 @@
   "lng": 139.794312,
   "addr": "墨田区横網二丁目1番11号",
   "tel": "0570-200-678",
-  "url": "",
+  "url": "https://www.doai.jp/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -110,12 +126,15 @@
   "hours": "紹介予約制（要確認）",
   "caps": [
    "eswl",
+   "holep",
    "hydro",
    "mrifusion",
+   "rezum",
    "rfa",
-   "robot"
+   "robot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "体外衝撃波腎・尿管結石破砕術",
    "前立腺針生検法(MRI撮影及び超音波検査融合画像によるもの)",
@@ -125,6 +144,11 @@
    "腹腔鏡下腎盂形成手術(内視鏡手術用支援機器を用いる場合)",
    "腹腔鏡下膀胱悪性腫瘍手術(内視鏡手術用支援機器を用いる場合)",
    "膀胱水圧拡張術及びハンナ型間質性膀胱炎手術(経尿道)"
+  ],
+  "manual_caps": [
+   "holep",
+   "rezum",
+   "tul"
   ]
  },
  {
@@ -136,7 +160,7 @@
   "lng": 139.817917,
   "addr": "墨田区江東橋4-23-15",
   "tel": "03-3633-6151",
-  "url": "",
+  "url": "https://www.tmhp.jp/bokutoh/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -144,13 +168,17 @@
   "hours": "紹介予約制（要確認）",
   "caps": [
    "aus",
-   "robot"
+   "robot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "人工尿道括約筋植込・置換術",
    "腹腔鏡下前立腺悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)",
    "腹腔鏡下腎悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)及び腹腔鏡下尿管悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)"
+  ],
+  "manual_caps": [
+   "tul"
   ]
  },
  {
@@ -162,19 +190,27 @@
   "lng": 139.84465,
   "addr": "葛飾区亀有五丁目14番1号",
   "tel": "03-5682-5111",
-  "url": "",
+  "url": "https://www.tmhp.jp/tobu/",
   "station": "",
   "walk": null,
   "bus": "",
   "bf": true,
   "hours": "紹介予約制（要確認）",
   "caps": [
-   "robot"
+   "holep",
+   "rezum",
+   "robot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "腹腔鏡下前立腺悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)",
    "腹腔鏡下膀胱悪性腫瘍手術(内視鏡手術用支援機器を用いる場合)"
+  ],
+  "manual_caps": [
+   "holep",
+   "rezum",
+   "tul"
   ]
  },
  {
@@ -186,7 +222,7 @@
   "lng": 139.852676,
   "addr": "江戸川区臨海町一丁目4番2号",
   "tel": "03-5605-8811",
-  "url": "",
+  "url": "https://www.tokyorinkai.jp/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -194,12 +230,16 @@
   "hours": "紹介予約制（要確認）",
   "caps": [
    "eswl",
-   "mrifusion"
+   "mrifusion",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "体外衝撃波腎・尿管結石破砕術",
    "前立腺針生検法(MRI撮影及び超音波検査融合画像によるもの)"
+  ],
+  "manual_caps": [
+   "tul"
   ]
  },
  {
@@ -234,7 +274,7 @@
   "lng": 139.765991,
   "addr": "足立区江北四丁目33番1号",
   "tel": "03-3857-0111",
-  "url": "",
+  "url": "https://twmu-amc.jp/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -245,9 +285,10 @@
    "hydro",
    "mrifusion",
    "robot",
-   "snm"
+   "snm",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "人工尿道括約筋植込・置換術",
    "仙骨神経刺激装置植込術及び仙骨神経刺激装置交換術(過活動膀胱)",
@@ -257,6 +298,9 @@
    "腹腔鏡下腎盂形成手術(内視鏡手術用支援機器を用いる場合)",
    "腹腔鏡下膀胱悪性腫瘍手術(内視鏡手術用支援機器を用いる場合)",
    "膀胱水圧拡張術及びハンナ型間質性膀胱炎手術(経尿道)"
+  ],
+  "manual_caps": [
+   "tul"
   ]
  },
  {
@@ -268,22 +312,30 @@
   "lng": 139.857986,
   "addr": "葛飾区青戸六丁目41番2号",
   "tel": "03-3603-2111",
-  "url": "",
+  "url": "https://www.jikei.ac.jp/hospital/katsushika/",
   "station": "",
   "walk": null,
   "bus": "",
   "bf": true,
   "hours": "紹介予約制（要確認）",
   "caps": [
+   "botox",
    "eswl",
+   "holep",
    "hydro",
-   "robot"
+   "robot",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "体外衝撃波腎・尿管結石破砕術",
    "腹腔鏡下前立腺悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)",
    "膀胱水圧拡張術及びハンナ型間質性膀胱炎手術(経尿道)"
+  ],
+  "manual_caps": [
+   "botox",
+   "holep",
+   "tul"
   ]
  },
  {
@@ -295,18 +347,22 @@
   "lng": 139.861069,
   "addr": "江戸川区北葛西四丁目3番1号",
   "tel": "03-5679-1211",
-  "url": "",
+  "url": "https://mk.moriyamaikai.or.jp/",
   "station": "",
   "walk": null,
   "bus": "",
   "bf": true,
   "hours": "紹介予約制（要確認）",
   "caps": [
-   "mrifusion"
+   "mrifusion",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "前立腺針生検法(MRI撮影及び超音波検査融合画像によるもの)"
+  ],
+  "manual_caps": [
+   "tul"
   ]
  },
  {
@@ -318,7 +374,7 @@
   "lng": 139.842041,
   "addr": "葛飾区立石五丁目1番9号",
   "tel": "03-3692-2121",
-  "url": "",
+  "url": "https://www.heisei-tateishi.net/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -326,12 +382,16 @@
   "hours": "紹介予約制（要確認）",
   "caps": [
    "eswl",
-   "hydro"
+   "hydro",
+   "tul"
   ],
-  "source": "関東信越厚生局 届出受理医療機関名簿",
+  "source": "関東信越厚生局 届出受理医療機関名簿＋公式サイト（手動監修）",
   "todoke": [
    "体外衝撃波腎・尿管結石破砕術",
    "膀胱水圧拡張術及びハンナ型間質性膀胱炎手術(経尿道)"
+  ],
+  "manual_caps": [
+   "tul"
   ]
  },
  {
@@ -343,7 +403,7 @@
   "lng": 139.893112,
   "addr": "江戸川区東小岩二丁目24番18号",
   "tel": "03-3673-1221",
-  "url": "",
+  "url": "https://www.edogawa.or.jp/",
   "station": "",
   "walk": null,
   "bus": "",
@@ -366,5 +426,107 @@
    "腹腔鏡下腎悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)及び腹腔鏡下尿管悪性腫瘍手術(内視鏡手術用支援機器を用いるもの)",
    "腹腔鏡下膀胱悪性腫瘍手術(内視鏡手術用支援機器を用いる場合)"
   ]
+ },
+ {
+  "id": "dn001",
+  "name": "立石駅前泌尿器・内科外科クリニック",
+  "dir": "down",
+  "real": true,
+  "lat": 35.736588,
+  "lng": 139.845261,
+  "addr": "葛飾区立石1-7-25 1F",
+  "tel": "03-5670-3366",
+  "url": "https://tateishi-urology.com/",
+  "station": "京成立石駅",
+  "walk": 4,
+  "bus": "",
+  "bf": true,
+  "hours": "土曜午後も診療（HP参照）",
+  "caps": [
+   "keizoku",
+   "rezum"
+  ],
+  "source": "公式サイト（日帰りWAVE治療・泌尿器一般）"
+ },
+ {
+  "id": "dn002",
+  "name": "井口腎泌尿器科 亀有",
+  "dir": "down",
+  "real": true,
+  "lat": 35.765789,
+  "lng": 139.84726,
+  "addr": "葛飾区亀有3-7-7",
+  "tel": "03-3838-8721",
+  "url": "https://www.iguchi-jinhinyoki-kameari.jp/",
+  "station": "亀有駅",
+  "walk": 1,
+  "bus": "",
+  "bf": true,
+  "hours": "HP参照（人工透析併設）",
+  "caps": [
+   "keizoku"
+  ],
+  "source": "公式サイト（泌尿器一般・PSA/結石フォロー・透析）"
+ },
+ {
+  "id": "dn003",
+  "name": "井口腎泌尿器科・内科 新小岩",
+  "dir": "down",
+  "real": true,
+  "lat": 35.716011,
+  "lng": 139.860214,
+  "addr": "葛飾区新小岩1-49-10",
+  "tel": "03-6231-5931",
+  "url": "https://www.iguchi-jinhinyoki-shinkoiwa.jp/",
+  "station": "新小岩駅",
+  "walk": null,
+  "bus": "",
+  "bf": true,
+  "hours": "HP参照（人工透析併設）",
+  "caps": [
+   "keizoku"
+  ],
+  "source": "公式サイト（泌尿器一般・透析）"
+ },
+ {
+  "id": "dn004",
+  "name": "ばんどうクリニック",
+  "dir": "down",
+  "real": true,
+  "lat": 35.74741,
+  "lng": 139.827118,
+  "addr": "葛飾区堀切3-7-5 斉藤ビル1階",
+  "tel": "03-6662-8255",
+  "url": "http://bando-clinic.com/",
+  "station": "堀切菖蒲園駅",
+  "walk": 1,
+  "bus": "",
+  "bf": true,
+  "hours": "HP参照",
+  "caps": [
+   "keizoku",
+   "female"
+  ],
+  "source": "公式サイト（内科・泌尿器科、女性のための泌尿器科）"
+ },
+ {
+  "id": "dn005",
+  "name": "金町中央病院",
+  "dir": "down",
+  "real": true,
+  "lat": 35.763023,
+  "lng": 139.865677,
+  "addr": "葛飾区金町1-9-1",
+  "tel": "03-3607-2001",
+  "url": "https://www.reiroukai.or.jp/",
+  "station": "金町駅",
+  "walk": null,
+  "bus": "",
+  "bf": true,
+  "hours": "HP参照",
+  "caps": [
+   "keizoku"
+  ],
+  "source": "公式サイト（泌尿器科外来：排尿障害・結石・前立腺がん等）"
  }
 ]

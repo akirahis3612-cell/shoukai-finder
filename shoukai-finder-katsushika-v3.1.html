@@ -64,33 +64,33 @@ header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 2px 
   padding:7px 13px;white-space:nowrap;max-width:230px;overflow:hidden;text-overflow:ellipsis}
 
 /* ---- map ---- */
-.mapwrap{position:relative;border-radius:18px;overflow:hidden;background:var(--night);
-  box-shadow:0 14px 40px rgba(12,20,36,.28);margin-bottom:16px}
+.mapwrap{position:relative;border-radius:18px;overflow:hidden;background:#dde7ee;
+  box-shadow:0 14px 40px rgba(12,20,36,.14);margin-bottom:16px}
 #stage{display:block;width:100%;height:52vh;min-height:360px;max-height:560px;
   touch-action:none;cursor:grab}
 #stage.grabbing{cursor:grabbing}
-.map-title{position:absolute;top:16px;left:18px;color:#e9eef5;pointer-events:none}
+.map-title{position:absolute;top:16px;left:18px;color:#1f2733;pointer-events:none}
 .map-title .mt1{font-family:"Shippori Mincho",serif;font-size:16px;letter-spacing:.12em}
-.map-title .mt2{font-size:10.5px;color:#8fa0b5;margin-top:2px}
+.map-title .mt2{font-size:10.5px;color:#66707c;margin-top:2px}
 .map-legend{position:absolute;bottom:14px;left:18px;display:flex;gap:14px;
-  font-size:11px;color:#aebccd;pointer-events:none}
+  font-size:11px;color:#4d5a66;pointer-events:none}
 .map-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
-.dot.u{background:#35c9d4}.dot.d{background:#f0a04e}
-.map-hint{position:absolute;bottom:14px;right:16px;font-size:10.5px;color:#6f7f93;pointer-events:none}
-.webgl-fail{padding:36px;text-align:center;color:#aebccd;font-size:13px;display:none}
+.dot.u{background:#0f8ea0}.dot.d{background:#d9822b}
+.map-hint{position:absolute;bottom:14px;right:16px;font-size:10.5px;color:#7a8590;pointer-events:none}
+.webgl-fail{padding:36px;text-align:center;color:#66707c;font-size:13px;display:none}
 .presets{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:6px;max-width:220px}
-.preset{border:1px solid rgba(255,255,255,.16);background:rgba(16,26,46,.78);
-  backdrop-filter:blur(6px);color:#dfe7f0;border-radius:10px;padding:8px 12px;
+.preset{border:1px solid rgba(20,35,50,.12);background:rgba(255,255,255,.86);
+  backdrop-filter:blur(6px);color:var(--ink);border-radius:10px;padding:8px 12px;
   font-size:12px;text-align:left;cursor:pointer;transition:.15s;line-height:1.3}
-.preset:hover{border-color:rgba(255,255,255,.4)}
+.preset:hover{border-color:rgba(20,35,50,.35)}
 .preset:focus-visible{outline:2px solid #35c9d4;outline-offset:2px}
 .preset.on{background:#eaf7f8;color:var(--up-ink);border-color:#35c9d4;font-weight:700}
-.preset small{display:block;font-size:10px;color:#8fa0b5;font-weight:400}
+.preset small{display:block;font-size:10px;color:#66707c;font-weight:400}
 .preset.on small{color:var(--up-ink)}
 .preset.hide{display:none}
 @media(max-width:700px){
   .presets{position:static;flex-direction:row;overflow-x:auto;max-width:none;
-    padding:10px 12px;background:var(--night2);gap:8px}
+    padding:10px 12px;background:#eef1f5;gap:8px}
   .preset{white-space:nowrap;flex:0 0 auto}
 }
 
@@ -103,8 +103,14 @@ header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 2px 
   padding:8px 13px;font-size:12.5px;cursor:pointer}
 .tchip[aria-pressed="true"]{background:var(--down-soft);border-color:var(--down);color:var(--down-ink);font-weight:700}
 .count{margin-left:auto;font-size:12.5px;color:var(--sub)}
-.caps-row{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;align-items:center}
-.caps-row .cat{font-size:10.5px;color:#9a948a;margin-right:2px}
+.caps-row{display:flex;flex-direction:column;gap:7px;margin:0 0 16px}
+.caps-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.capsearch{border:1px solid var(--line);border-radius:999px;padding:7px 14px;
+  font-size:12.5px;font-family:inherit;width:220px;background:#fff}
+.capsearch:focus{outline:2px solid var(--focus);outline-offset:-1px}
+.cap-group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cap-group.hide{display:none}
+.caps-row .cat{font-size:10.5px;color:#9a948a;min-width:58px}
 .chip{border:1px solid var(--line);background:#fff;border-radius:999px;
   padding:6px 12px;font-size:12px;cursor:pointer;transition:.12s}
 .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -219,7 +225,7 @@ button.print{background:#fff;border:1px solid var(--line)!important;color:var(--
     <div class="map-legend">
       <span><span class="dot u"></span>上り</span>
       <span><span class="dot d"></span>下り</span>
-      <span style="color:#7d8ea4">▲ ランドマーク</span>
+      <span style="color:#66707c">▲ ランドマーク</span>
     </div>
     <div class="map-hint">ドラッグ回転 ／ ピンチ・ホイール拡縮 ／ ピンをタップ</div>
     <div class="presets" id="presets" role="group" aria-label="外来シナリオ"></div>
@@ -504,9 +510,21 @@ PRESETS.forEach(p=>{
   };
   presets.appendChild(b);
 });
+const capTools=document.createElement("div");capTools.className="caps-tools";
+const capSearch=document.createElement("input");
+capSearch.className="capsearch";capSearch.type="search";
+capSearch.placeholder="対応内容をしぼり込む（例：結石）";
+capSearch.setAttribute("aria-label","対応内容の検索");
+capTools.appendChild(capSearch);
+const modeBtn=document.createElement("button");
+modeBtn.className="modebtn";
+modeBtn.onclick=()=>{mode=mode==="AND"?"OR":"AND";syncChips();render();};
+capTools.appendChild(modeBtn);
+capsRow.appendChild(capTools);
 CAPS.forEach(c=>{
+  const g=document.createElement("div");g.className="cap-group";
   const lab=document.createElement("span");lab.className="cat";lab.textContent=c.cat;
-  capsRow.appendChild(lab);
+  g.appendChild(lab);
   c.items.forEach(([id,name])=>{
     const b=document.createElement("button");
     b.className="chip";b.dataset.cap=id;b.textContent=name;
@@ -514,13 +532,22 @@ CAPS.forEach(c=>{
     b.onclick=()=>{activePreset=null;
       active.has(id)?active.delete(id):active.add(id);
       syncChips();render();};
-    capsRow.appendChild(b);
+    g.appendChild(b);
   });
+  capsRow.appendChild(g);
 });
-const modeBtn=document.createElement("button");
-modeBtn.className="modebtn";
-modeBtn.onclick=()=>{mode=mode==="AND"?"OR":"AND";syncChips();render();};
-capsRow.appendChild(modeBtn);
+capSearch.oninput=()=>{
+  const q=capSearch.value.trim().toLowerCase();
+  document.querySelectorAll(".cap-group").forEach(g=>{
+    let any=false;
+    g.querySelectorAll(".chip").forEach(b=>{
+      const show=!q||b.textContent.toLowerCase().includes(q)||
+        (b.dataset.cap||"").includes(q);
+      b.classList.toggle("hide",!show);if(show)any=true;
+    });
+    g.classList.toggle("hide",!any);
+  });
+};
 function syncChips(){
   document.querySelectorAll(".chip").forEach(c=>
     c.setAttribute("aria-pressed",active.has(c.dataset.cap)?"true":"false"));
@@ -628,7 +655,7 @@ function labelSprite(txt,color,size){
   const c=document.createElement("canvas");c.width=384;c.height=64;
   const g=c.getContext("2d");
   g.font="700 26px 'Zen Kaku Gothic New',sans-serif";
-  g.shadowColor="rgba(5,10,20,.9)";g.shadowBlur=8;
+  g.shadowColor="rgba(255,255,255,.95)";g.shadowBlur=7;  // ライト地図用の白フチ
   g.fillStyle=color;g.textAlign="center";g.textBaseline="middle";
   g.fillText(txt.length>13?txt.slice(0,13)+"…":txt,192,32);
   const tx=new THREE.CanvasTexture(c);tx.minFilter=THREE.LinearFilter;
@@ -651,14 +678,14 @@ function ribbon(pts,width,color,opacity,glow){
 function railLine(pts){
   const v=pts.map(p=>{const q=pos3(p[0],p[1]);q.y=.03;return q;});
   return new THREE.Line(new THREE.BufferGeometry().setFromPoints(v),
-    new THREE.LineBasicMaterial({color:0x44536b,transparent:true,opacity:.85}));
+    new THREE.LineBasicMaterial({color:0x8a939e,transparent:true,opacity:.9}));
 }
 function station(lat,lng,name){
   const p=pos3(lat,lng);
   const d=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.02,16),
-    new THREE.MeshBasicMaterial({color:0xb9c6d6}));
+    new THREE.MeshBasicMaterial({color:0x5f6b78}));
   d.position.set(p.x,.035,p.z);scene.add(d);
-  const s=labelSprite(name,"#8fa0b5",0.9);s.position.set(p.x,.32,p.z);scene.add(s);
+  const s=labelSprite(name,"#4d5a66",0.9);s.position.set(p.x,.32,p.z);scene.add(s);
 }
 function addLandmark(lm){
   const p=pos3(lm.lat,lm.lng);
@@ -680,25 +707,25 @@ function addLandmark(lm){
     roof.position.y=.21;roof.rotation.y=Math.PI/4;
     g.add(body,roof);
     const lab=labelSprite(lm.name,"#e0c9a8",1.4);lab.position.y=.55;g.add(lab);
-  }else{ // 公園：緑の円
+  }else{ // 公園：緑の円（Google Maps風の淡い緑）
     const c=new THREE.Mesh(new THREE.CircleGeometry(lm.r||0.4,28),
-      new THREE.MeshBasicMaterial({color:0x1c4a33,transparent:true,opacity:.9}));
+      new THREE.MeshBasicMaterial({color:0xb7dcae,transparent:true,opacity:.95}));
     c.rotation.x=-Math.PI/2;c.position.y=.012;g.add(c);
-    const lab=labelSprite(lm.name,"#7fbf9a",1.3);lab.position.y=.3;g.add(lab);
+    const lab=labelSprite(lm.name,"#3c8a4e",1.3);lab.position.y=.3;g.add(lab);
   }
   scene.add(g);
 }
 function buildOriginMarker(){
   originGroup=new THREE.Group();
   const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.3,4),
-    new THREE.MeshLambertMaterial({color:0xf2f5f8,emissive:0x334455}));
+    new THREE.MeshLambertMaterial({color:0xd9453a,emissive:0x7a1f18}));
   cone.position.y=.16;cone.rotation.y=Math.PI/4;
-  const lab=labelSprite("起点","#ffffff",1.0);lab.position.y=.62;
+  const lab=labelSprite("起点","#b3261e",1.0);lab.position.y=.62;
   originGroup.add(cone,lab);
   ringsGroup=new THREE.Group();
   [1,2,3].forEach(r=>{
     const ring=new THREE.Mesh(new THREE.RingGeometry(r-0.008,r+0.008,96),
-      new THREE.MeshBasicMaterial({color:0x2a3a56,side:THREE.DoubleSide,transparent:true,opacity:.9}));
+      new THREE.MeshBasicMaterial({color:0x9fb0c0,side:THREE.DoubleSide,transparent:true,opacity:.85}));
     ring.rotation.x=-Math.PI/2;ring.position.y=0.02;ringsGroup.add(ring);
   });
   scene.add(originGroup,ringsGroup);
@@ -728,7 +755,7 @@ function buildPins(){
   Object.values(pins).forEach(p=>scene.remove(p.group));
   pins={};
   FACILITIES.forEach(f=>{
-    const col=f.dir==="up"?0x35c9d4:0xf0a04e;
+    const col=f.dir==="up"?0x0f8ea0:0xd9822b;
     const h=f.dir==="up"?0.85:0.5;
     const g=new THREE.Group();
     const pil=new THREE.Mesh(new THREE.CylinderGeometry(.028,.028,h,10),
@@ -738,7 +765,7 @@ function buildPins(){
       new THREE.MeshLambertMaterial({color:col,emissive:col,emissiveIntensity:.35,transparent:true}));
     head.position.y=h+.06;head.userData.fid=f.id;
     const lab=labelSprite(shortName(f.name),
-      f.dir==="up"?"#9fe6ec":"#ffd9ad",f.dir==="up"?1.7:1.45);
+      f.dir==="up"?"#0b6b74":"#a75f1a",f.dir==="up"?1.7:1.45);
     lab.position.y=h+.38;
     g.add(pil,head,lab);
     const p=pos3(f.lat,f.lng);g.position.set(p.x,0,p.z);
@@ -751,28 +778,39 @@ function initMap(){
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true});}
   catch(e){canvas.style.display="none";fail.style.display="block";return;}
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-  scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1424);
-  scene.fog=new THREE.Fog(0x0c1424,10,18);
+  // Google Maps 風ライトテーマ
+  scene=new THREE.Scene();scene.background=new THREE.Color(0xdde7ee);
+  scene.fog=new THREE.Fog(0xdde7ee,10,18);
   camera=new THREE.PerspectiveCamera(46,2,0.1,60);
-  scene.add(new THREE.AmbientLight(0xffffff,.75));
-  const dl=new THREE.DirectionalLight(0xbfd4ea,.5);dl.position.set(3,6,2);scene.add(dl);
+  scene.add(new THREE.AmbientLight(0xffffff,.95));
+  const dl=new THREE.DirectionalLight(0xffffff,.35);dl.position.set(3,6,2);scene.add(dl);
 
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(13,13),
-    new THREE.MeshLambertMaterial({color:0x101a2e}));
+    new THREE.MeshLambertMaterial({color:0xf2efe9}));   // GMaps風の地面
   ground.rotation.x=-Math.PI/2;scene.add(ground);
-  const grid=new THREE.GridHelper(13,26,0x1b2740,0x16203a);
+  const grid=new THREE.GridHelper(13,26,0xe0dcd2,0xe8e4da);
   grid.position.y=.005;scene.add(grid);
 
-  // 川（実座標ベースの概形）— 水面とわかる明るめの青に
+  // 主要道路（概形）：白いリボン
+  const road=(pts,w)=>{const m=ribbon(pts,w||.05,0xffffff,1,null);
+    m.position.y=.013;scene.add(m);};
+  road([[35.725,139.820],[35.735,139.838],[35.744,139.852],
+        [35.755,139.865],[35.766,139.876]],.06);          // 水戸街道（国道6号）
+  road([[35.710,139.847],[35.730,139.849],[35.750,139.845],
+        [35.770,139.838]],.06);                            // 環七通り
+  road([[35.708,139.822],[35.712,139.845],[35.716,139.862],
+        [35.720,139.885]],.05);                            // 蔵前橋通り
+
+  // 川（実座標ベースの概形）— GMaps風の水色
   scene.add(ribbon([[35.782,139.876],[35.770,139.873],[35.760,139.876],[35.752,139.866],
     [35.744,139.870],[35.734,139.862],[35.724,139.866],[35.712,139.858]],
-    .14,0x2b7ca6,.95,0x39c8dd)); // 中川
+    .14,0x8ec8e8,1,null)); // 中川
   scene.add(ribbon([[35.782,139.830],[35.758,139.826],[35.732,139.820],[35.706,139.812]],
-    .26,0x266d94,.95,0x2b9db4)); // 荒川・綾瀬川
+    .26,0x84c2e4,1,null)); // 荒川・綾瀬川
   scene.add(ribbon([[35.782,139.892],[35.756,139.888],[35.730,139.894],[35.706,139.900]],
-    .2,0x266d94,.9,0x2b9db4)); // 江戸川
+    .2,0x84c2e4,1,null)); // 江戸川
   // 川の名前ラベル
-  const riverLabel=(lat,lng,t)=>{const s=labelSprite(t,"#6fc4e0",1.0);
+  const riverLabel=(lat,lng,t)=>{const s=labelSprite(t,"#2e7cb8",1.0);
     const p=pos3(lat,lng);s.position.set(p.x,.22,p.z);scene.add(s);};
   riverLabel(35.760,139.876,"中川");
   riverLabel(35.758,139.826,"荒川");
@@ -793,7 +831,7 @@ function initMap(){
   buildPins();
 
   selRing=new THREE.Mesh(new THREE.RingGeometry(.16,.22,40),
-    new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide,transparent:true,opacity:.9}));
+    new THREE.MeshBasicMaterial({color:0x1f2733,side:THREE.DoubleSide,transparent:true,opacity:.85}));
   selRing.rotation.x=-Math.PI/2;selRing.position.y=.025;selRing.visible=false;
   scene.add(selRing);
 
