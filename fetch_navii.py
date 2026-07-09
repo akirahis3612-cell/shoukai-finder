@@ -90,6 +90,13 @@ LINK_HINTS = ["院長", "挨拶", "医師", "ドクター", "スタッフ", "診
 # JSナビでリンクが辿れないサイト向け：よくあるサブページURLを推測して叩く。
 GUESS_PATHS = ["doctor", "doctors", "staff", "greeting", "urology", "hinyokika", "about", "profile"]
 
+# 否定文脈の検出（HP文言の偽陽性対策）。
+# 例:「泌尿器科専門医ではありません」「膀胱鏡は対応していない」等を除外するため。
+NEG_AFTER = re.compile(r"(ではありません|ではない|ではなく|行っておりません|行っていません|"
+                       r"対応しておりません|対応していません|対応していない|実施しておりません|"
+                       r"できません|おりません|ありません|不可|非対応|受け付けており)")
+NEG_BEFORE = re.compile(r"(❌|✕|×|対応していない|対応不可|行っておりません|非対応|できない)")
+
 # 出力
 OUT_CSV  = Path("navii_candidates.csv")
 OUT_HTML = Path("navii_candidates.html")
@@ -374,9 +381,42 @@ def crawl_site(url):
         time.sleep(0.3)
     return "\n".join(pages), False
 
+def count_senmon(flat):
+    """泌尿器科専門医の記載数。『専門医療機関』の部分一致と否定文脈を除外し、
+    学会の専門医/指導医の形も本物の証拠として数える（ガイドライン引用の学会名単独は拾わない）。
+    flat: タグ除去・空白除去済みの本文。"""
+    n = 0
+    for m in re.finditer(r"泌尿器科専門医(?!療)", flat):     # 「専門医療(機関)」を除外
+        if NEG_AFTER.search(flat[m.end():m.end() + 12]):    # 「…ではありません」等
+            continue
+        n += 1
+    n += len(re.findall(r"泌尿器科学会(?:認定)?(?:専門医|指導医)", flat))
+    return n
+
+def hp_caps(text):
+    """HP本文からdown capを抽出。否定文脈（❌/対応していない/行っておりません等）は除外。"""
+    flat = nkey(_strip_tags(text))
+    caps, evidence = set(), {}
+    for cap, words in CAP_KEYWORDS.items():
+        for w in words:
+            hit = False
+            for m in re.finditer(re.escape(nkey(w)), flat):
+                pre = flat[max(0, m.start() - 30):m.start()]
+                post = flat[m.end():m.end() + 14]
+                if NEG_BEFORE.search(pre) or NEG_AFTER.search(post):
+                    continue
+                hit = True
+                break
+            if hit:
+                caps.add(cap)
+                evidence[cap] = w
+                break
+    return caps, evidence
+
 def hp_check(cands):
     """各院HPを巡回し、(1)CAP_KEYWORDSヒット (2)確度シグナル
-    （泌尿器科専門医の記載数・泌尿器語の種類数・非常勤泌尿器の共起）を採取。best-effort。"""
+    （泌尿器科専門医の記載数・泌尿器語の種類数・非常勤泌尿器の共起）を採取。best-effort。
+    HP文言は否定文脈・部分一致による偽陽性を除外して判定する。"""
     _need_requests()
     print("[HP突合] 各院サイトを巡回（院長/医師/診療ページも／失敗は無視）")
     for idx, c in enumerate(cands):
@@ -386,14 +426,15 @@ def hp_check(cands):
         if failed:
             c.setdefault("hp_note", "HP取得失敗")
             continue
-        key = nkey(_strip_tags(text))
-        # T1③ 泌尿器科専門医／学会の記載（院長・常勤の泌尿器科医の客観証拠）
-        c["senmon"] = key.count(nkey("泌尿器科専門医")) + key.count(nkey("日本泌尿器科学会"))
+        flat = norm(_strip_tags(text))     # 空白除去（漢字は大小無関係）
+        key = flat.upper()                 # ラテン語(ED/PSA/LH-RH)照合用
+        # T1③ 泌尿器科専門医の記載（否定・部分一致を除外＝院長/常勤の泌尿器科医の客観証拠）
+        c["senmon"] = count_senmon(flat)
         # T3 泌尿器語の種類数（診療濃度）
         c["uro"] = sum(1 for t in set(nkey(x) for x in URO_TERMS) if t in key)
         # T2(弱) 泌尿器×非常勤の近接共起
-        c["hijoukin"] = 1 if re.search(r"泌尿器.{0,15}非常勤|非常勤.{0,15}泌尿器", key) else 0
-        caps, evidence = match_caps(text)
+        c["hijoukin"] = 1 if re.search(r"泌尿器.{0,15}非常勤|非常勤.{0,15}泌尿器", flat) else 0
+        caps, evidence = hp_caps(text)     # 否定文脈を除外したcap抽出
         for cap in caps:
             c["caps"].add(cap)
             c["evidence"].setdefault(cap, evidence[cap] + "(HP)")
