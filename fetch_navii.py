@@ -293,23 +293,40 @@ def extract_candidates(urology_ids, specs=None, local=None):
 def _strip_tags(h):
     return re.sub(r"<[^>]+>", " ", h)
 
-def _fetch(url):
-    """1URL取得。(本文, 最終URL)。失敗時は ("", url)。日本語サイトの文字コードに配慮。"""
+# クリニックサイトはブラウザUA以外を弾く/古いTLSのことがある。HP巡回はブラウザUAで。
+HP_UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) referral-finder/1.0"}
+
+def _url_variants(url):
+    """取得失敗に備えたURL候補（https化・www有無）。順に試す。"""
     if not url.startswith("http"):
         url = "http://" + url
-    try:
-        r = requests.get(url, headers=UA, timeout=12, allow_redirects=True)
-        if r.status_code != 200:
-            return "", url
-        return r.content.decode(r.apparent_encoding or r.encoding or "utf-8", "ignore"), r.url
-    except Exception:
-        return "", url
+    out = [url]
+    m = re.match(r"(https?)://(www\.)?(.+)", url)
+    if m:
+        _, www, rest = m.groups()
+        out += [f"https://{rest}", f"https://www.{rest}"] if not www else [f"https://{rest}"]
+    seen = set()
+    return [u for u in out if not (u in seen or seen.add(u))]
+
+def _fetch(url, try_variants=False):
+    """1URL取得。(本文, 最終URL)。try_variants時は失敗ならhttps化・www有無も試す
+    （トップページ用。サブページ/推測URLは無駄打ちを避け単発）。"""
+    urls = _url_variants(url) if try_variants else [url if url.startswith("http") else "http://" + url]
+    for u in urls:
+        try:
+            r = requests.get(u, headers=HP_UA, timeout=12, allow_redirects=True)
+            if r.status_code != 200:
+                continue
+            return r.content.decode(r.apparent_encoding or r.encoding or "utf-8", "ignore"), r.url
+        except Exception:
+            continue
+    return "", url
 
 def crawl_site(url):
     """トップ＋院長/医師/診療などのサブページを巡回して本文を連結して返す。
     リンクはhref・アンカーテキスト両方で判定。JSナビでリンクが辿れない場合は
     よくあるサブページURL(doctor/greeting/urology…)を推測して補う。"""
-    top, final = _fetch(url)
+    top, final = _fetch(url, try_variants=True)
     if not top:
         return "", True
     m = re.match(r"https?://[^/]+", final)
