@@ -481,19 +481,39 @@ def score_candidate(c):
         br.append("(HP取得失敗)")
     return score, "／".join(br)
 
+# 泌尿器の専門的な対応を示すcap（これがあれば「専門」）。keizokuは全院共通なので含めない。
+SPECIALIST_CAPS = {"bscope", "lhrh", "bcg", "botox", "female"}
+
+def uro_tier(c):
+    """患者案内用の「泌尿器専門度」ラベル。密度だけで上がらないよう強い信号ベースで判定。
+    専門: 院長=泌尿器科医(名称/専門医記載)・腎透析泌尿器・専門手技capのいずれか。
+    対応: 専門評価は無いが泌尿器が主科(1〜2番目)or 診療科3つ以内の絞られた院。
+    処方・近隣: 多科に泌尿器が埋もれる院（継続処方・近さ優先で使う）。"""
+    if c.get("name1") or c.get("name2") or c.get("senmon", 0) >= 1 \
+            or (set(c["caps"]) & SPECIALIST_CAPS):
+        return "専門"
+    sp = c.get("specs", [])
+    n = len(sp)
+    pos = next((k + 1 for k, s in enumerate(sp) if "泌尿器" in s), 99)
+    if pos <= 2 or n <= 3:
+        return "対応"
+    return "処方・近隣"
+
 # ============================== 出力（医師確認表） ==============================
 
-CSV_HEADER = ["確度", "確度内訳", "施設名", "住所", "電話", "診療科", "ナビイ抽出cap",
+CSV_HEADER = ["泌尿器専門度", "確度", "確度内訳", "施設名", "住所", "電話", "診療科", "ナビイ抽出cap",
               "HP URL", "HP突合ヒット", "医師判定", "備考", "lat", "lng", "医療機関ID"]
 
 def finalize(cands, do_geocode=True):
     """keizoku付与・確度スコア算出・ジオコーディングし、確度の高い順に並べて出力用の行に整える。"""
     cache = json.loads(GEOCODE_CACHE.read_text(encoding="utf-8")) if GEOCODE_CACHE.exists() else {}
-    # 確度スコアを付与して降順ソート（医師が上から見ていける）
+    # 確度スコア・専門度ラベルを付与して降順ソート（医師が上から見ていける）
     for c in cands:
         c["_score"], c["_break"] = score_candidate(c)
+        c["_tier"] = uro_tier(c)
+    _torder = {"専門": 0, "対応": 1, "処方・近隣": 2}
     rows = []
-    for c in sorted(cands, key=lambda x: (-x["_score"], x["addr"], x["name"])):
+    for c in sorted(cands, key=lambda x: (_torder.get(x["_tier"], 9), -x["_score"], x["addr"])):
         caps = sorted(set(c["caps"]) | set(DEFAULT_CAPS))
         ll = geocode(c["addr"], cache, do_geocode)
         approx = len(ll) == 3
@@ -502,7 +522,7 @@ def finalize(cands, do_geocode=True):
         if approx: note.append("位置は概算")
         if c.get("hp_note"): note.append(c["hp_note"])
         rows.append({
-            "確度": c["_score"], "確度内訳": c["_break"],
+            "泌尿器専門度": c["_tier"], "確度": c["_score"], "確度内訳": c["_break"],
             "施設名": c["name"], "住所": c["addr"], "電話": c["tel"] or "要確認",
             "診療科": c["spec"], "ナビイ抽出cap": " ".join(caps), "HP URL": c["url"],
             "HP突合ヒット": ev, "医師判定": "", "備考": "／".join(note),
@@ -521,14 +541,13 @@ def write_csv(rows):
 def write_html(rows):
     def esc(s):
         return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
-    def band(sc):
-        return "hi" if sc >= 50 else ("mid" if sc >= 20 else "lo")
+    tband = {"専門": "hi", "対応": "mid", "処方・近隣": "lo"}
     trs = []
     for r in rows:
         link = f'<a href="{esc(r["HP URL"])}" target="_blank">HP</a>' if r["HP URL"] else ""
-        sc = r["確度"]
+        cls = tband.get(r["泌尿器専門度"], "lo")
         trs.append(
-            f"<tr class='{band(sc)}'><td class='sc'>{sc}</td>"
+            f"<tr class='{cls}'><td class='tier'>{esc(r['泌尿器専門度'])}</td><td class='sc'>{r['確度']}</td>"
             + "".join(f"<td>{esc(r[k])}</td>" for k in
                       ["施設名", "住所", "ナビイ抽出cap", "確度内訳", "HP突合ヒット"])
             + f"<td>{link}</td><td class='judge'></td></tr>")
@@ -540,17 +559,19 @@ def write_html(rows):
  table{{border-collapse:collapse;width:100%;font-size:13px}}
  th,td{{border:1px solid #ccc;padding:5px 7px;text-align:left;vertical-align:top}}
  th{{background:#f2efe9;position:sticky;top:0}}
- td.sc{{font-weight:700;text-align:right;white-space:nowrap}}
+ td.sc{{font-weight:700;text-align:right;white-space:nowrap;color:#666}}
+ td.tier{{font-weight:700;white-space:nowrap}}
  td.judge{{background:#fffbe6;min-width:90px}}
- tr.hi td.sc{{color:#1a7f37}} tr.mid td.sc{{color:#9a6700}} tr.lo td.sc{{color:#999}}
+ tr.hi td.tier{{color:#1a7f37}} tr.mid td.tier{{color:#9a6700}} tr.lo td.tier{{color:#999}}
  tr.hi{{background:#eaf6ec}} tr.mid{{background:#fdf7e3}}
 </style>
 <h1>ナビイ候補 医師確認表（{TARGET_SPECIALTY}・{'・'.join(AREA_FILTER_DOWN)}）</h1>
-<p class="note">{len(rows)}件・<b>確度の高い順</b>。確度＝下り紹介先としての泌尿器の本気度
-（名称・泌尿器科専門医記載・HP泌尿器濃度・科の絞り込み等の合成／緑=高・黄=中）。
-最右列に採用/×・修正capを記入 → 採用行を DOWN_FACILITIES へ反映してください。</p>
+<p class="note">{len(rows)}件・<b>泌尿器専門度→確度の順</b>。
+🟢専門=院長が泌尿器科医／専門手技あり（膀胱鏡・LH-RH等を任せられる）、
+🟡対応=一般クリニック＋泌尿器（PSA・薬フォロー可）、⚪処方・近隣=継続処方・近さ優先。
+基本は全院採用の想定。必要に応じ最右列に×・修正capを記入してください。</p>
 <table><thead><tr>
- <th>確度</th><th>施設名</th><th>住所</th><th>ナビイ抽出cap</th><th>確度内訳</th><th>HP突合ヒット</th><th>HP</th><th>医師判定</th>
+ <th>専門度</th><th>確度</th><th>施設名</th><th>住所</th><th>ナビイ抽出cap</th><th>確度内訳</th><th>HP突合ヒット</th><th>HP</th><th>医師判定</th>
 </tr></thead><tbody>
 {''.join(trs)}
 </tbody></table></html>"""
