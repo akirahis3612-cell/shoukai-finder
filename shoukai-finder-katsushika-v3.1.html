@@ -329,6 +329,7 @@ const UPCAPS = new Set(["holep","tul","tot","robot",
   "turp","tueb","pvp","rrp","pul","pnl","lsc","rasc"]);
 
 const PRESETS = [
+  {id:"pu", dir:"down", name:"泌尿器専門で紹介", sub:"院長が泌尿器科医の院", uro:"専門", caps:[], mode:"AND"},
   {id:"p1", dir:"down", name:"排尿障害の薬フォロー", sub:"継続処方できる近所へ", caps:["keizoku"], mode:"AND"},
   {id:"p2", dir:"down", name:"前立腺癌 ホルモン療法", sub:"LH-RH打てるところ", caps:["lhrh"], mode:"AND"},
   {id:"p3", dir:"down", name:"膀胱癌フォロー", sub:"膀胱鏡のあるクリニック", caps:["bscope"], mode:"AND"},
@@ -421,8 +422,11 @@ function matchCaps(f){
 }
 function visible(){
   const wk=f=>f.walk==null?999:f.walk;
+  const ap=PRESETS.find(p=>p.id===activePreset);
+  const uro=ap&&ap.uro;                       // 「泌尿器専門で紹介」等は uro_level で絞る
   const arr=FACILITIES.filter(f=>
     (dirMode==="all"||f.dir===dirMode) && matchCaps(f) &&
+    (!uro || f.uro_level===uro) &&
     (!onlyWalk7||wk(f)<=7) && (!onlyBf||f.bf));
   arr.sort((a,b)=> sortBy==="dist" ? distKm(a)-distKm(b) : wk(a)-wk(b) || distKm(a)-distKm(b));
   return arr;
@@ -526,7 +530,7 @@ PRESETS.forEach(p=>{
   b.onclick=()=>{
     if(activePreset===p.id){activePreset=null;active.clear();mode="AND";}
     else{
-      activePreset=p.id; active=new Set(p.caps); mode=p.mode;
+      activePreset=p.id; active=new Set(p.caps||[]); mode=p.mode;
       if(p.dir!=="all") setDir(p.dir);
     }
     syncChips(); render();
@@ -601,11 +605,13 @@ function render(){
   }else{
     cards.innerHTML=items.map(f=>{
       const dl=f.dir==="up"?["u","上り"]:["d","下り"];
+      const uc={"専門":"#1a7f37","対応":"#9a6700","処方・近隣":"#8a8a8a"}[f.uro_level];
+      const ul=uc?`<span class="badge" style="background:${uc};color:#fff" title="泌尿器専門度">${f.uro_level}</span>`:"";
       const capsHtml=f.caps.map(c=>`<span class="cap${active.has(c)?' hit':''}">${CAPNAME[c]}</span>`).join("");
       return `<article class="card${selectedId===f.id?' sel':''}" id="card-${f.id}">
         <div class="top">
           <h3 class="name"><button onclick="selectFacility('${f.id}',false)">${f.name}</button></h3>
-          <span class="badge ${dl[0]}">${dl[1]}</span>
+          <span class="badge ${dl[0]}">${dl[1]}</span>${ul}
         </div>
         <div class="access">
           <span class="km">${distKm(f).toFixed(1)} km</span>
