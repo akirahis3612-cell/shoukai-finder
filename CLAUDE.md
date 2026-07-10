@@ -8,9 +8,10 @@
 | ファイル | 役割 |
 |---|---|
 | `shoukai-finder-katsushika-v3.1.html` | アプリ本体（単一HTML、Leaflet + 国土地理院淡色タイル） |
-| `facilities.json` | 施設データ（アプリが raw URL から fetch。上り14＋下り5＝19件） |
-| `fetch_kosei.py` | データ生成器。厚生局名簿 → facilities.json |
-| `fetch_navii.py` | ナビイ半自動化・第1段。ナビイ診療所オープンデータ → 泌尿器科クリニックの医師確認表（navii_candidates.csv/html）。facilities.json は触らない |
+| `facilities.json` | 施設データ（アプリが raw URL から fetch。上り14＋下り47＝61件。下りは uro_level つき） |
+| `fetch_kosei.py` | データ生成器。厚生局名簿＋down_facilities.json → facilities.json |
+| `fetch_navii.py` | ナビイ診療所オープンデータ → 泌尿器科クリニックを抽出・確度スコア/専門度付与 → `navii_candidates.csv/html`（医師確認表）＋`down_facilities.json`（アプリ用下りデータ）を出力 |
+| `down_facilities.json` | 下り施設データ（ナビイ44院・uro_level/caps/座標）。fetch_kosei が手動分とマージして facilities.json へ |
 | `geocode_cache.json` | 住所→座標キャッシュ（GSIジオコーダ節約用。fetch_kosei/navii で共有） |
 | `.github/workflows/update-data.yml` | 毎月5日 朝6時JST に自動更新（workflow_dispatch も可） |
 | `.github/workflows/navii-candidates.yml` | ナビイ候補の医師確認表を手動生成（成果物はArtifact） |
@@ -27,7 +28,8 @@
 3. `CAP_RULES` で届出名称→cap 変換（AREA_FILTER: 葛飾・足立・江戸川・墨田・荒川）
 4. `MANUAL_INFO` をマージ（施設名部分一致）：届出制度がない手技（HoLEP/TURP/TUL等）を
    各院公式サイトの手術実績から手動監修したもの＋公式URL。**自動再生成でも消えない設計**
-5. `DOWN_FACILITIES`（下り＝かかりつけ5院、完全手動、座標ハードコード）を連結
+5. `load_downs()`：`down_facilities.json`（ナビイ由来47院）＋手動オーバーレイ（駅/徒歩の上書き）
+   ＋手動フル院（Navii未収載=立石駅前/新小岩/金町中央）をマージして連結
 6. ジオコーディング：GSI AddressSearch（住所に「東京都」を補完、cache使用、失敗時は区中心+approx）
 
 ## cap 分類（2026-07 医師監修済み）
