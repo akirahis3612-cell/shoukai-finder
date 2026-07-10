@@ -255,6 +255,7 @@ button.print{background:#fff;border:1px solid var(--line)!important;color:var(--
       <button id="sortDist" aria-pressed="true">近い順</button>
       <button id="sortWalk" aria-pressed="false">駅徒歩順</button>
     </div>
+    <button class="tchip" id="fSenmon" aria-pressed="false" title="下りを泌尿器専門の院だけに絞る">🟢泌尿器専門のみ</button>
     <button class="tchip" id="fWalk" aria-pressed="false">駅徒歩7分以内</button>
     <button class="tchip" id="fBf" aria-pressed="false">♿ バリアフリー</button>
     <span class="count" id="count"></span>
@@ -408,7 +409,7 @@ const LANDMARKS = [
 let origin = {...HOME};
 let dirMode = "all";           // all | up | down
 let active = new Set(), mode = "AND";
-let sortBy = "dist", onlyWalk7=false, onlyBf=false;
+let sortBy = "dist", onlyWalk7=false, onlyBf=false, onlySenmon=false;
 let selectedId=null, activePreset=null;
 
 const distKm = f=>{
@@ -427,6 +428,7 @@ function visible(){
   const arr=FACILITIES.filter(f=>
     (dirMode==="all"||f.dir===dirMode) && matchCaps(f) &&
     (!uro || f.uro_level===uro) &&
+    (!onlySenmon || f.dir!=="down" || f.uro_level==="専門") &&
     (!onlyWalk7||wk(f)<=7) && (!onlyBf||f.bf));
   arr.sort((a,b)=> sortBy==="dist" ? distKm(a)-distKm(b) : wk(a)-wk(b) || distKm(a)-distKm(b));
   return arr;
@@ -590,6 +592,7 @@ function segSync(){
 }
 fWalk.onclick=e=>{onlyWalk7=!onlyWalk7;e.currentTarget.setAttribute("aria-pressed",onlyWalk7);render();};
 fBf.onclick=e=>{onlyBf=!onlyBf;e.currentTarget.setAttribute("aria-pressed",onlyBf);render();};
+fSenmon.onclick=e=>{onlySenmon=!onlySenmon;e.currentTarget.setAttribute("aria-pressed",onlySenmon);render();};
 
 /* ================= カード ================= */
 function siteUrl(f){
@@ -598,7 +601,7 @@ function siteUrl(f){
 }
 function render(){
   const items=visible();
-  const filtering=active.size>0||onlyWalk7||onlyBf||dirMode!=="all";
+  const filtering=active.size>0||onlyWalk7||onlyBf||onlySenmon||dirMode!=="all";
   count.textContent=filtering?`条件に合う ${items.length} 施設`:`全 ${items.length} 施設`;
   if(items.length===0){
     cards.innerHTML=`<div class="empty">この条件に合う施設がまだ登録されていません。<br>条件を減らすか、施設データを追加してください。</div>`;
