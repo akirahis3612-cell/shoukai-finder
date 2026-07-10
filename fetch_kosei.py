@@ -94,50 +94,63 @@ MANUAL_INFO = {
     "江戸川病院": {"caps": [], "url": "https://www.edogawa.or.jp/"},
 }
 
-# 下り（かかりつけ・逆紹介先）。実在施設、公式サイトで対応範囲を確認（2026-07）。
-# 自動取得の対象外のため手動管理。caps はHP記載ベースの保守的な判定 → 要臨床監修。
-DOWN_FACILITIES = [
+# 下り（かかりつけ・逆紹介先）。基本は down_facilities.json（fetch_navii が生成、ナビイ由来の
+# 全院＋uro_level/caps/座標）を取り込み、以下の手動データをマージして facilities.json に連結する。
+DOWN_JSON = Path("down_facilities.json")
+
+# ① Navii に載らない実在の下り施設（手動フル管理）。病院や未登録院はここで補う。
+#   ★臨床監修の本体その3。年1回はHPと突き合わせて見直すこと。
+HAND_DOWN_FULL = [
     {"id": "dn001", "name": "立石駅前泌尿器・内科外科クリニック", "dir": "down",
      "real": True, "lat": 35.736588, "lng": 139.845261,
      "addr": "葛飾区立石1-7-25 1F", "tel": "03-5670-3366",
      "url": "https://tateishi-urology.com/",
      "station": "京成立石駅", "walk": 4, "bus": "", "bf": True,
      "hours": "土曜午後も診療（HP参照）",
-     "caps": ["keizoku", "rezum"],
+     "caps": ["keizoku", "rezum"], "uro_level": "専門",
      "source": "公式サイト（日帰りWAVE治療・泌尿器一般）"},
-    {"id": "dn002", "name": "井口腎泌尿器科 亀有", "dir": "down",
-     "real": True, "lat": 35.765789, "lng": 139.84726,
-     "addr": "葛飾区亀有3-7-7", "tel": "03-3838-8721",
-     "url": "https://www.iguchi-jinhinyoki-kameari.jp/",
-     "station": "亀有駅", "walk": 1, "bus": "", "bf": True,
-     "hours": "HP参照（人工透析併設）",
-     "caps": ["keizoku"],
-     "source": "公式サイト（泌尿器一般・PSA/結石フォロー・透析）"},
     {"id": "dn003", "name": "井口腎泌尿器科・内科 新小岩", "dir": "down",
      "real": True, "lat": 35.716011, "lng": 139.860214,
      "addr": "葛飾区新小岩1-49-10", "tel": "03-6231-5931",
      "url": "https://www.iguchi-jinhinyoki-shinkoiwa.jp/",
      "station": "新小岩駅", "walk": None, "bus": "", "bf": True,
      "hours": "HP参照（人工透析併設）",
-     "caps": ["keizoku"],
+     "caps": ["keizoku"], "uro_level": "専門",
      "source": "公式サイト（泌尿器一般・透析）"},
-    {"id": "dn004", "name": "ばんどうクリニック", "dir": "down",
-     "real": True, "lat": 35.74741, "lng": 139.827118,
-     "addr": "葛飾区堀切3-7-5 斉藤ビル1階", "tel": "03-6662-8255",
-     "url": "http://bando-clinic.com/",
-     "station": "堀切菖蒲園駅", "walk": 1, "bus": "", "bf": True,
-     "hours": "HP参照",
-     "caps": ["keizoku", "female"],
-     "source": "公式サイト（内科・泌尿器科、女性のための泌尿器科）"},
     {"id": "dn005", "name": "金町中央病院", "dir": "down",
      "real": True, "lat": 35.763023, "lng": 139.865677,
      "addr": "葛飾区金町1-9-1", "tel": "03-3607-2001",
      "url": "https://www.reiroukai.or.jp/",
      "station": "金町駅", "walk": None, "bus": "", "bf": True,
      "hours": "HP参照",
-     "caps": ["keizoku"],
+     "caps": ["keizoku"], "uro_level": "専門",
      "source": "公式サイト（泌尿器科外来：排尿障害・結石・前立腺がん等）"},
 ]
+
+# ② Navii由来の院に上書きする手動情報（名称の全キーワード一致でマージ）。
+#   駅・徒歩・電話など、Naviiに無い/精度が低い項目を補う。caps/uro_level は上書きしない。
+HAND_OVERRIDES = [
+    {"match": ["ばんどう"], "station": "堀切菖蒲園駅", "walk": 1,
+     "tel": "03-6662-8255", "hours": "HP参照"},
+    {"match": ["井口", "亀有"], "station": "亀有駅", "walk": 1,
+     "tel": "03-3838-8721", "hours": "HP参照（人工透析併設）"},
+]
+
+def load_downs():
+    """down_facilities.json（ナビイ由来）に手動オーバーレイを当て、手動フル院を足して返す。"""
+    downs = []
+    if DOWN_JSON.exists():
+        downs = json.loads(DOWN_JSON.read_text(encoding="utf-8"))
+        for nd in downs:
+            for ov in HAND_OVERRIDES:
+                if all(k in nd.get("name", "") for k in ov["match"]):
+                    for f in ("station", "walk", "hours", "tel", "url"):
+                        if f in ov and ov[f] not in (None, ""):
+                            nd[f] = ov[f]
+        print(f"  下り: ナビイ {len(downs)} 件 ＋ 手動 {len(HAND_DOWN_FULL)} 件")
+    else:
+        print("  [warn] down_facilities.json が無い → 手動下りのみ（fetch_navii を先に実行）")
+    return downs + HAND_DOWN_FULL
 
 GSI_GEOCODER = "https://msearch.gsi.go.jp/address-search/AddressSearch?q="
 GEOCODE_CACHE = Path("geocode_cache.json")
@@ -329,8 +342,9 @@ def build_facilities(records, do_geocode=True):
             entry["source"] += "＋公式サイト（手動監修）"
         out.append(entry)
     GEOCODE_CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=1))
-    out += DOWN_FACILITIES
-    print(f"  施設 {len(out)} 件（上り{len(out)-len(DOWN_FACILITIES)}＋下り{len(DOWN_FACILITIES)}）")
+    downs = load_downs()
+    out += downs
+    print(f"  施設 {len(out)} 件（上り{len(out)-len(downs)}＋下り{len(downs)}）")
     return out
 
 # ============================== main ==============================

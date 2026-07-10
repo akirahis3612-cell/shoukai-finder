@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+meibo_*.xlsx
+todoke_names.txt
+navii_candidates.csv
+navii_candidates.html
